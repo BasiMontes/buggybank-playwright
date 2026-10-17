@@ -1,0 +1,20 @@
+# Dependencias
+node_modules/
+
+# Credenciales: el .env tiene tu email y contraseña del sandbox. Nunca se sube.
+.env
+.env.*
+!.env.example
+
+# Resultados de Playwright (se regeneran en cada ejecución)
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+.auth/
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,18 @@
+{
+  // Configuración de TypeScript.
+  // Playwright compila los tests por su cuenta, así que este archivo solo se usa para
+  // `npm run typecheck`: detectar errores de tipos ANTES de ejecutar contra la app.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "esnext",
+    "moduleResolution": "bundler", // resolución de imports moderna (TypeScript 7 ya no acepta "node")
+    "strict": true, // obliga a manejar null/undefined: menos sorpresas en runtime
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true, // no generamos .js: solo verificamos tipos
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "lib": ["ES2022", "DOM"] // DOM: algunos tests ejecutan código dentro del navegador
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts", "playwright.config.ts"]
+}
