@@ -35,6 +35,7 @@ test.describe('Movimientos', { tag: '@extended' }, () => {
       if (direction === 'all') await pages.transactions.goto();
       else await pages.transactions.filterDirection(direction);
       const uiNotes = (await pages.transactions.readRows()).map((r) => r.description);
+      expect.soft(uiNotes.length, `La tabla debía tener filas (${direction})`).toBeGreaterThan(0);
       expect.soft(uiNotes, `UI en el mismo orden que la API (${direction})`).toEqual(fromApi.slice(0, uiNotes.length).map((t) => t.note));
     }
   });

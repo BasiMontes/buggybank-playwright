@@ -169,7 +169,9 @@ test.describe('Transferencias · extendido', { tag: '@extended' }, () => {
     await attachEvidence(testInfo, 'respuesta', { status: response?.status() ?? 'sin request' });
 
     const after = await api.snapshotBalances();
-    if (after.CHECKING === before.CHECKING) {
+    const rejected = after.CHECKING === before.CHECKING;
+    testInfo.annotations.push({ type: 'info', description: rejected ? 'La app rechazó la nota larga' : 'La app aceptó la nota larga' });
+    if (rejected) {
       // Rechazada: no debe haber movimiento.
       await expectNoSideEffects(api, before, longNote);
     } else {
@@ -212,4 +214,29 @@ test.describe('Transferencias · extendido', { tag: '@extended' }, () => {
     expect(await api.findTransactionsByNote(note)).toHaveLength(1);
     expectBalanceDelta(before, await api.snapshotBalances(), { CHECKING: -amountCents, SAVINGS: +amountCents });
   });
+
+  // BUG-24: valores límite alrededor de 500. Se hace por API para ir rápido y no depender de la pantalla.
+  for (const { amount, shouldDuplicate } of [
+    { amount: 499, shouldDuplicate: false },
+    { amount: 500, shouldDuplicate: true },
+    { amount: 500.5, shouldDuplicate: false },
+    { amount: 1000, shouldDuplicate: true },
+  ]) {
+    test(
+      `TR-17 · una transferencia de ${amount} mueve exactamente ${amount}${shouldDuplicate ? ' (BUG-24: se duplica)' : ''}`,
+      { annotation: shouldDuplicate ? { type: 'issue', description: 'BUG-24: los importes enteros >= 500 se aplican dos veces' } : [] },
+      async ({ api, accounts }, testInfo) => {
+        const before = await api.snapshotBalances();
+        test.skip(before.CHECKING < toCents(amount * 2), 'Saldo insuficiente para que un duplicado no cause otro error');
+        const note = uniqueNote(`TR17-${amount}`);
+
+        const res = await api.transfer({ fromAccountId: accounts.CHECKING.id, toAccountId: accounts.SAVINGS.id, amount, note });
+        await attachEvidence(testInfo, 'respuesta', { status: res.status(), body: await res.text() });
+
+        expect(res.status()).toBe(200);
+        expectBalanceDelta(before, await api.snapshotBalances(), { CHECKING: -toCents(amount), SAVINGS: +toCents(amount) });
+        expect(await api.findTransactionsByNote(note), 'Una intención = un movimiento').toHaveLength(1);
+      },
+    );
+  }
 });

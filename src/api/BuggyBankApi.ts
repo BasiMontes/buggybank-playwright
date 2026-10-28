@@ -153,15 +153,16 @@ export class BuggyBankApi {
       const diff = Math.round((targetChecking - now.CHECKING.balance) * 1000) / 1000;
       if (diff === 0) return true;
       const [from, to] = diff > 0 ? [now.SAVINGS, now.CHECKING] : [now.CHECKING, now.SAVINGS];
-      const res = await this.transfer({
-        fromAccountId: from.id,
-        toAccountId: to.id,
-        amount: Math.abs(diff),
-        note: 'QA-teardown restore',
-      });
-      if (!res.ok()) {
-        console.warn(`[teardown] No se pudo restaurar el saldo (${res.status()})`);
-        return false;
+      // BUG-24: una transferencia de importe entero >= 500 se aplica dos veces. Para que la propia
+      // limpieza no lo dispare, esos importes se parten en (importe - 0.01) + 0.01, que llevan decimales.
+      const total = Math.abs(diff);
+      const amounts = Number.isInteger(total) && total >= 500 ? [Math.round((total - 0.01) * 1000) / 1000, 0.01] : [total];
+      for (const amount of amounts) {
+        const res = await this.transfer({ fromAccountId: from.id, toAccountId: to.id, amount, note: 'QA-teardown restore' });
+        if (!res.ok()) {
+          console.warn(`[teardown] No se pudo restaurar el saldo (${res.status()})`);
+          return false;
+        }
       }
       // Comprobamos que la restauración ha funcionado: una transferencia de limpieza también
       // puede verse afectada por un bug de la app (pasó con BUG-24, que la duplicó).

@@ -75,6 +75,24 @@ Mejora pendiente: en vez de depender de la carrera, capturar las dos peticiones 
 
 **40 en verde y 21 en rojo, más PG-06 inestable**: 17 bugs de la app, 2 preguntas abiertas, BUG-23 (LG-02) y BUG-15 (MV-06).
 
+## Revisión de las que pasan (37)
+
+Leídas una a una, buscando las que podrían pasar sin comprobar nada:
+
+| Hallazgo | Pruebas | Qué se hizo |
+|---|---|---|
+| Sólidas: comprueban saldos, movimientos, estados y respuestas contra la API | AP-03 (×6), AP-05 (×2), AP-01 (control), AP-01g, DB-02, DB-03, LG-01, LG-03, LG-04, PG-01, PG-05, PG-07, PF-01, PF-03, TR-07, TR-08, TR-13, TR-15 | Nada |
+| Pasan porque la interfaz bloquea (la API quizá no): solo prueban la pantalla | PG-02 (cero, negativo), PG-03, TR-06, TR-10, TR-11, PF-02 | Se deja dicho: no demuestran que el backend valide |
+| Podían pasar con una tabla vacía | MV-01 | Añadida la comprobación de que hay filas |
+| Aceptan dos resultados y no decían cuál ocurrió | TR-14 | Ahora anota si la app rechazó o aceptó la nota larga |
+| Solo comparan números de la propia pantalla entre sí | DB-01 | Se mantiene: DB-02 lo contrasta con la API |
+| **Ninguna cubre los valores límite de BUG-24**: todas usan importes pequeños | — | Añadida **TR-17**: 499, 500, 500.5 y 1000 por API |
+
+### La limpieza también caía en BUG-24
+
+La limpieza devolvía el dinero con una sola transferencia. Si la diferencia era un importe entero ≥ 500 (como tras TC-04, que deja la cuenta en -6.500 y necesita 13.000), esa transferencia **se duplicaba** y el saldo no volvía a su sitio (la comprobación lo detectaba y avisaba).
+Ahora esos importes se parten en `importe - 0.01` y `0.01`, que llevan decimales y no disparan el bug. Pendiente de comprobar con una ejecución.
+
 ## Lo que esta revisión deja claro
 
 - 19 de los 24 rojos son la app, no las pruebas. Eso valida la suite como detector, pero no su calidad: hay que mirar las **37 en verde** por si alguna pasa sin comprobar nada (TR-12, TR-14 y TR-13 son las candidatas).
