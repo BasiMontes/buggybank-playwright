@@ -50,8 +50,30 @@ Esperaba 40 y 21. Confirmó 3 de los 5 arreglos (LG-02 email, TR-16 y la parte d
 | **LG-02 (contraseña)** | El `role="alert"` que encontré es el anunciador de rutas de Next.js, siempre vacío. La captura muestra el error real: texto rojo **"Auth failed"** dentro del formulario | Esperar a la respuesta de `/api/auth/login` y comprobar que "Auth failed" no está en pantalla (BUG-23) |
 | **PG-06** | Pasó en la primera ejecución y **falló en la segunda** (`COMPLETED` en vez de `PENDING`) | Es BUG-16, pero **intermitente**: depende de que los dos clics coincidan. Hay que medir cuántas veces aparece (`--repeat-each=5`) |
 
-Con esto los rojos son: 17 bugs de la app + 2 preguntas abiertas + BUG-23 (LG-02) + BUG-15 (MV-06) + BUG-16 (PG-06) = **22**,
-más PG-04 (fecha en el listado), que debería pasar a verde tras el arreglo: **39 en verde y 22 en rojo** esperados.
+## Tercera ejecución: las 6 pruebas tocadas, 5 veces cada una (`--repeat-each=5`)
+
+20 en verde y 10 en rojo, y todo cuadra con lo esperado salvo PG-06:
+
+| Prueba | Resultado en 5 intentos | Lectura |
+|---|---|---|
+| LG-02 (email inválido) | 5 verdes | Arreglo confirmado |
+| LG-02 (el servidor no revela si un email existe) | 5 verdes | Sin cambios |
+| PG-04 (fecha en el listado) | 5 verdes | Arreglo confirmado: la fecha era correcta |
+| LG-02 (contraseña incorrecta) | 5 rojas | **BUG-23 confirmado**: texto rojo `Auth failed` (`<p class="text-sm text-rose-600">`) |
+| PG-04 (fecha pasada) | 5 rojas | BUG-17 confirmado |
+| **PG-06** | **5 verdes** | **No reproduce el bug de forma fiable (ver abajo)** |
+
+### PG-06 (BUG-16): bug intermitente, prueba no fiable
+
+Sumando todas las ejecuciones: **falló 1 vez y pasó 6** (la 2.ª ejecución completa dio `COMPLETED`; la 1.ª y los 5 intentos aislados dieron `PENDING`).
+Con esos datos no puedo afirmar que BUG-16 se reproduzca con esta prueba. Es una prueba **inestable**: depende de que los dos clics lleguen a la vez.
+BUG-16 viene de la exploración de la IA y sigue siendo una hipótesis hasta reproducirlo a mano.
+Mejora pendiente: en vez de depender de la carrera, capturar las dos peticiones `POST` de "Procesar" y comparar su clave de idempotencia
+(la hipótesis del bug es que cada clic genera una clave nueva). Eso es determinista.
+
+### Estado final esperado de la suite de 61
+
+**40 en verde y 21 en rojo, más PG-06 inestable**: 17 bugs de la app, 2 preguntas abiertas, BUG-23 (LG-02) y BUG-15 (MV-06).
 
 ## Lo que esta revisión deja claro
 

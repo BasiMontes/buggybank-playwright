@@ -131,7 +131,7 @@ He trabajado con Claude (Anthropic). Esto es lo que hizo cada parte:
 
 ## Pendiente
 
-- **La suite extendida (`tests/extended`, `tests/api`, 61 pruebas) está ejecutada y clasificada, pero no revisada del todo.** La generó la IA; en la ejecución del 28/10 salieron 37 en verde y 24 en rojo, y cada rojo está explicado en [`docs/EXTENDED_RESULTS.md`](docs/EXTENDED_RESULTS.md) (17 bugs de la app, 2 preguntas abiertas y 5 fallos de la prueba, ya corregidos). Falta repasar las que salen en verde. La entrega son solo las 5 pruebas `@core`.
+- **La suite extendida (`tests/extended`, `tests/api`, 61 pruebas) está ejecutada y clasificada, pero no revisada del todo.** La generó la IA; en la ejecución del 28/10 salieron 37 en verde y 24 en rojo, y cada rojo está explicado en [`docs/EXTENDED_RESULTS.md`](docs/EXTENDED_RESULTS.md) (17 bugs de la app, 2 preguntas abiertas y 5 fallos de la prueba, ya corregidos; PG-06 es intermitente y está explicada ahí). Falta repasar las que salen en verde. La entrega son solo las 5 pruebas `@core`.
 - Ejecutar la suite en GitHub Actions con las credenciales como *secrets* (hoy no es práctico: el sandbox caduca cada 24 horas).
 
 ## Para comentar en la charla
