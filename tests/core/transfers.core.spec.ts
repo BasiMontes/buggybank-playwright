@@ -168,7 +168,13 @@ test.describe('Transferencias @core', () => {
   // ---------------------------------------------------------------------------
   test(
     'TC-04 · transferir exactamente el saldo disponible se acepta y deja la cuenta en 0.00',
-    { tag: '@core' },
+    {
+      tag: '@core',
+      annotation: {
+        type: 'issue',
+        description: 'BUG-24: transferir el saldo exacto mueve el doble (duplicated:true) y registra un solo movimiento',
+      },
+    },
     async ({ api, accounts, pages }, testInfo) => {
       // ¿Por qué este caso? Es el valor LÍMITE de la regla "fondos suficientes".
       // Un error típico es programar `monto >= saldo → rechazar` en vez de `monto > saldo`.
@@ -216,6 +222,10 @@ test.describe('Transferencias @core', () => {
       const before = await api.snapshotBalances();
 
       // Contamos cuántos POST salen y qué responde el servidor a cada uno.
+      let postsSent = 0;
+      page.on('request', (req) => {
+        if (req.url().includes('/api/transfers') && req.method() === 'POST') postsSent++;
+      });
       const apiCalls: { status: number; body: string }[] = [];
       page.on('response', async (res) => {
         if (res.url().includes('/api/transfers') && res.request().method() === 'POST') {
@@ -226,18 +236,17 @@ test.describe('Transferencias @core', () => {
       // ACT: una sola intención del usuario, enviada dos veces en el mismo instante.
       await pages.transfer.goto();
       await pages.transfer.fillForm({ from: accounts.CHECKING, to: accounts.SAVINGS, amount: String(amount), note });
-      const firstResponse = page.waitForResponse((r) => r.url().includes('/api/transfers') && r.request().method() === 'POST');
       await pages.transfer.doubleSubmitSimultaneous();
-      await firstResponse;
 
-      // ¿Por qué esperar en vez de un "wait for"? No hay ningún elemento que nos avise
-      // "el segundo request ya terminó" (si existe). Esperamos a que los saldos dejen de
-      // cambiar: `expect.poll` consulta la API cada medio segundo hasta que se cumple la
-      // condición o se agota el tiempo. Así no dependemos de un sleep fijo.
-      await expect
-        .poll(async () => (await api.findTransactionsByNote(note)).length, { timeout: 5_000, intervals: [500] })
-        .toBeGreaterThanOrEqual(1);
-      await page.waitForTimeout(2_000); // margen para que llegue un posible segundo request (documentado arriba)
+      // ESPERA EXPLÍCITA: seguimos cuando han salido peticiones y TODAS tienen respuesta.
+      // Antes había una espera fija de 2 s tras la primera respuesta. La traza mostró que las
+      // dos peticiones salen a la vez, pero una responde a los 1,8 s y la otra a los 4,4 s:
+      // la espera fija acertaba por poco y, con la red lenta, podía dar un verde falso.
+      // `toPass` reintenta el bloque hasta que se cumple (o hasta el timeout).
+      await expect(() => {
+        expect(postsSent, 'Debía salir al menos una petición de transferencia').toBeGreaterThan(0);
+        expect(apiCalls, 'Cada petición enviada debía tener su respuesta').toHaveLength(postsSent);
+      }).toPass({ timeout: 15_000 });
 
       // ASSERT
       const after = await api.snapshotBalances();

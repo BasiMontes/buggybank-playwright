@@ -55,7 +55,7 @@ export const test = base.extend<Fixtures>({
    * `page.request` es un APIRequestContext que comparte la "cookie jar" del navegador:
    * la cookie de sesión que devuelve /api/auth/login queda disponible para `page`.
    */
-  api: async ({ page }, use) => {
+  api: async ({ page }, use, testInfo) => {
     const api = new BuggyBankApi(page.request);
     await api.loginOrFail(credentials.email, credentials.password);
 
@@ -71,7 +71,13 @@ export const test = base.extend<Fixtures>({
     if (!(await page.request.get('/api/me')).ok()) {
       await api.login(credentials.email, credentials.password);
     }
-    await api.restoreCheckingBalance(CHECKING.balance);
+    const restored = await api.restoreCheckingBalance(CHECKING.balance);
+    if (!restored) {
+      testInfo.annotations.push({
+        type: 'warning',
+        description: 'La limpieza no dejó el saldo como estaba: crea un sandbox nuevo antes de volver a ejecutar.',
+      });
+    }
     // No hacemos logout: el contexto se destruye solo y la cookie desaparece con él.
   },
 

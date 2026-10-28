@@ -9,6 +9,7 @@ Severidad: **Crítica** = mueve dinero de forma incorrecta · **Alta** = rompe u
 | ID | Sev. | Hallazgo | Esperado | Obtenido | Caso |
 |----|------|----------|----------|----------|------|
 | BUG-01 | Crítica | **Se acepta una transferencia mayor al saldo (UI)** | Rechazo por fondos insuficientes | Con saldo 6,486.63 se transfirieron 6,486.64 → `200 OK transfer`; CHECKING quedó en `-$0.01` | TC-03 |
+| BUG-24 | Crítica | **Transferir el saldo exacto mueve el doble** | Origen en `0.00`, destino +monto, un movimiento | Una sola petición `amount:6500` → `200 {"duplicated":true}`; CHECKING 6,500 → -6,500 y SAVINGS 3,500 → 16,500, pero **un solo movimiento** en el historial. Reproducido 2/2 con sandboxes nuevos (28/10/2026). Disparador por confirmar | TC-04 |
 | BUG-02 | Crítica | **Doble submit duplica la transferencia** | Una intención = un movimiento | Dos clics simultáneos → dos `POST /api/transfers`, ambos `200` con `duplicated:false`, dos débitos de 2.22. (Un doble clic "humano" sí se filtró.) | TC-05 |
 | BUG-03 | Alta | **El botón "deshabilitado" sigue funcionando** | Si el botón se ve deshabilitado, no ejecuta | Con monto > saldo el botón muestra `opacity-60 cursor-not-allowed` pero `disabled=false`; el clic ejecuta la transferencia (CH-008) | TR-12 |
 | BUG-04 | Crítica | **La API acepta montos negativos** | `4xx`, sin efectos | `amount:-50` → `200`; el dinero fluye al revés (+50 en origen) | AP-01 |
@@ -65,6 +66,7 @@ Lo que **sí** funciona bien: transición inválida → `409 INVALID_PAYMENT_TRA
 |-----|---------------------|
 | BUG-01 | TC-03, AP-01e |
 | BUG-02 | TC-05, AP-04 |
+| BUG-24 | TC-04 |
 | BUG-03 | TR-12 |
 | BUG-04 / 05 / 06 / 07 | AP-01a / b / c / d · TR-09 |
 | BUG-08 | TC-03 (`expectCleanBalances`) |

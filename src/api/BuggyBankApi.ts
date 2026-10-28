@@ -143,14 +143,14 @@ export class BuggyBankApi {
    * Usamos 3 decimales (y no centavos) a propósito: si un bug dejó un saldo como
    * 6535.625 (BUG-07), queremos devolverlo exactamente a 6500.000.
    *
-   * Nunca hace fallar el test: si la limpieza no funciona (por ejemplo, porque el test
-   * cerró sesión), avisa en consola. El sandbox se renueva a las 24 h de todos modos.
+   * Nunca hace fallar el test. Devuelve `true` si el saldo quedó como estaba y `false` si
+   * no: el fixture lo convierte en un aviso visible en el informe.
    */
-  async restoreCheckingBalance(targetChecking: number): Promise<void> {
+  async restoreCheckingBalance(targetChecking: number): Promise<boolean> {
     try {
       const now = await this.getAccounts();
       const diff = Math.round((targetChecking - now.CHECKING.balance) * 1000) / 1000;
-      if (diff === 0) return;
+      if (diff === 0) return true;
       const [from, to] = diff > 0 ? [now.SAVINGS, now.CHECKING] : [now.CHECKING, now.SAVINGS];
       const res = await this.transfer({
         fromAccountId: from.id,
@@ -158,9 +158,17 @@ export class BuggyBankApi {
         amount: Math.abs(diff),
         note: 'QA-teardown restore',
       });
-      if (!res.ok()) console.warn(`[teardown] No se pudo restaurar el saldo (${res.status()})`);
+      if (!res.ok()) {
+        console.warn(`[teardown] No se pudo restaurar el saldo (${res.status()})`);
+        return false;
+      }
+      // Comprobamos que la restauración ha funcionado: una transferencia de limpieza también
+      // puede verse afectada por un bug de la app (pasó con BUG-24, que la duplicó).
+      const after = await this.getAccounts();
+      return Math.abs(after.CHECKING.balance - targetChecking) < 0.0005;
     } catch (error) {
       console.warn(`[teardown] Restauración omitida: ${(error as Error).message.split('\n')[0]}`);
+      return false;
     }
   }
 
