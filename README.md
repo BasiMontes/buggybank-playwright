@@ -92,7 +92,9 @@ Una prueba concreta: `npx playwright test -g "TC-04"`.
 
 `npm run report` abre el informe HTML. Para cada prueba fallida hay **captura**, **vídeo**, **traza** (DOM, red y consola paso a paso), **adjuntos JSON** con los saldos antes y después y las respuestas de la API, y una **anotación** con el bug.
 
-> 📸 _[Añadir aquí `docs/reporte.png`, revisando que no se vea el email del sandbox]_
+![Informe de Playwright del 28/10/2026: 2 pruebas en verde y 3 en rojo](docs/reporte.png)
+
+_Captura del informe tomada con el propio Playwright._
 
 ## Uso de IA
 
