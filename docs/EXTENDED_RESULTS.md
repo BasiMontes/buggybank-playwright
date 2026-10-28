@@ -40,8 +40,18 @@ la revisión consistió en decidir, para cada fallo, si era **de la app** o **de
 | TR-16 | Sí salió **una sola** petición (la app filtró el doble clic), que tardó ~3 s; la prueba esperaba solo 5 s a que apareciera el movimiento | Subir la espera a 20 s |
 | MV-06 | En la parte de montos, los movimientos con 3 decimales (creados por otras pruebas, BUG-07) se muestran redondeados (`1.01`) y `toCents(1.005)` da `1.00`. La parte de estados sí detecta **BUG-15** (la fila CANCELLED no muestra su estado) | Saltar las filas con más de 2 decimales; BUG-15 sigue en rojo |
 
-Con estos arreglos se esperan **40 en verde y 21 en rojo**: los 19 anteriores, BUG-23 (LG-02) y BUG-15 (MV-06).
-Falta volver a ejecutarlas para confirmarlo.
+## Segunda ejecución (28/10/2026): 38 en verde y 23 en rojo
+
+Esperaba 40 y 21. Confirmó 3 de los 5 arreglos (LG-02 email, TR-16 y la parte de montos de MV-06) y dejó dos sorpresas:
+
+| Prueba | Qué pasó | Qué se hizo |
+|---|---|---|
+| **PG-04 (fecha en el listado)** | Seguía en rojo: **mi arreglo estaba mal**. Con `(?<!\d)` no se separa `…-00` de `30 oct 2026`, porque el `0` anterior también es un dígito | Buscar la fecha en la celda (`td`) y no en el texto de toda la fila |
+| **LG-02 (contraseña)** | El `role="alert"` que encontré es el anunciador de rutas de Next.js, siempre vacío. La captura muestra el error real: texto rojo **"Auth failed"** dentro del formulario | Esperar a la respuesta de `/api/auth/login` y comprobar que "Auth failed" no está en pantalla (BUG-23) |
+| **PG-06** | Pasó en la primera ejecución y **falló en la segunda** (`COMPLETED` en vez de `PENDING`) | Es BUG-16, pero **intermitente**: depende de que los dos clics coincidan. Hay que medir cuántas veces aparece (`--repeat-each=5`) |
+
+Con esto los rojos son: 17 bugs de la app + 2 preguntas abiertas + BUG-23 (LG-02) + BUG-15 (MV-06) + BUG-16 (PG-06) = **22**,
+más PG-04 (fecha en el listado), que debería pasar a verde tras el arreglo: **39 en verde y 22 en rojo** esperados.
 
 ## Lo que esta revisión deja claro
 

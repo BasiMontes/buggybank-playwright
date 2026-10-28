@@ -32,13 +32,12 @@ function paymentData(source: Account, overrides: Partial<PaymentRequest> = {}): 
  * "2026-10-19" → regex que acepta "19 oct 2026" (formato de la UI en español).
  * @param anchored true = el texto completo debe ser la fecha; false = la fecha puede
  *                 estar dentro de un texto más largo (por ejemplo, una fila del listado).
- *                 Sin \\b: en la fila el número de cuenta y la fecha vienen pegados ("…0030 oct 2026").
  */
 function displayedDatePattern(isoDate: string, anchored = true): RegExp {
   const [year, month, day] = isoDate.split('-').map(Number);
   const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept?', 'oct', 'nov', 'dic'];
   const core = `${day} ${months[month - 1]}\\.? ${year}`;
-  return new RegExp(anchored ? `^${core}$` : `(?<!\\d)${core}(?!\\d)`, 'i');
+  return new RegExp(anchored ? `^${core}$` : `\\b${core}\\b`, 'i');
 }
 
 test.describe('Pagos', { tag: '@extended' }, () => {
@@ -142,9 +141,11 @@ test.describe('Pagos', { tag: '@extended' }, () => {
       expect.soft(await pages.paymentDetail.field('FECHA'), `Fecha en detalle (+${days} días)`).toMatch(displayedDatePattern(date));
 
       await pages.paymentsList.goto();
+      // Se busca en las celdas (td) y no en el texto de la fila: al unir las celdas, el número de
+      // cuenta y la fecha quedan pegados ("…-0030 oct 2026") y ninguna expresión los separa bien.
       await expect
-        .soft(pages.paymentsList.rowByBeneficiary(payment.beneficiary), `Fecha en listado (+${days} días)`)
-        .toContainText(displayedDatePattern(date, false));
+        .soft(pages.paymentsList.rowByBeneficiary(payment.beneficiary).locator('td').filter({ hasText: displayedDatePattern(date, false) }), `Fecha en listado (+${days} días)`)
+        .toHaveCount(1);
     }
   });
 

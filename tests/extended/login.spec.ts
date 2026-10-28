@@ -41,17 +41,18 @@ test.describe('Login', { tag: '@extended' }, () => {
   test(
     'LG-02 · una contraseña incorrecta muestra un mensaje en el idioma de la app',
     { annotation: { type: 'issue', description: 'BUG-23: el servidor responde "Auth failed" en inglés mientras el resto de la app está en español (CH-001)' } },
-    async ({ page, pages }) => {
+    async ({ page, pages }, testInfo) => {
       await pages.login.goto();
-      await pages.login.login(credentials.email, 'contraseña-incorrecta');
+      const [response] = await Promise.all([
+        page.waitForResponse((r) => r.url().includes('/api/auth/login')),
+        pages.login.login(credentials.email, 'contraseña-incorrecta'),
+      ]);
 
       await expect(page).toHaveURL(/\/login/);
-      // Mensaje coherente con el resto de la app (español) y que no dice "Auth failed".
-      // El error sale en el elemento role="alert"; buscar texto suelto en toda la página
-      // coincidía con las etiquetas del formulario ("Contraseña", "Ingresar con credenciales").
-      const alert = page.getByRole('alert');
-      await expect(alert, 'Debía mostrarse un mensaje de error').toHaveText(/\S/);
-      await expect.soft(alert, 'El mensaje no debía estar en inglés ("Auth failed")').not.toContainText('Auth failed');
+      await attachEvidence(testInfo, 'respuesta', { status: response.status(), body: await response.text() });
+      // El error aparece como texto rojo dentro del formulario (no como role="alert": ese elemento
+      // es el anunciador de rutas de Next.js y siempre está vacío). Aquí aparece "Auth failed" en inglés.
+      await expect.soft(page.getByText('Auth failed'), 'El mensaje no debía estar en inglés ("Auth failed")').toBeHidden();
     },
   );
 
