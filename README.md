@@ -57,7 +57,7 @@ Otras decisiones:
 - **TC-01 no comprueba `direction`**, porque está roto en todas las transferencias (BUG-09). Si lo comprobara, un bug de Movimientos taparía el resultado real de la transferencia.
 - **Un solo worker:** todas las pruebas usan las mismas dos cuentas; en paralelo se pisarían los saldos.
 - **Limpieza que se comprueba:** al terminar, cada prueba devuelve CHECKING a su saldo inicial y **verifica** que lo ha conseguido. Si no, el informe muestra un aviso para crear un sandbox nuevo.
-- **Esperas explícitas:** ninguna prueba usa esperas fijas (`waitForTimeout`).
+- **Esperas explícitas:** las 5 pruebas de la entrega no usan esperas fijas (`waitForTimeout`). Las tres que quedan en la suite sin revisar (TR-12, TR-16 y PG-06) son márgenes para comprobar que algo *no* ocurre; están en la lista de revisión.
 
 ## Requisitos e instalación
 
