@@ -126,7 +126,6 @@ He trabajado con Claude (Anthropic). Esto es lo que hizo cada parte:
 - **La limpieza no comprobaba nada.** En TC-04, la transferencia que devuelve el dinero también se duplicó y dejó el sandbox descuadrado sin avisar. Ahora la limpieza verifica el saldo y, si no cuadra, lo dice en el informe.
 - **TC-05 tenía una espera fija de 2 segundos.** La traza mostró que las dos peticiones salen a la vez, pero responden a los 1,8 s y a los 4,4 s: la espera acertaba por poco. La cambié por una espera explícita hasta que todas las peticiones tienen respuesta.
 - **La IA concluyó que el disparador era el saldo exacto, y estaba equivocada.** Mi exploración manual lo desmintió (6.500 con un saldo de 45.500 también se duplica) y localizó el límite real en 500.
-- **Los comentarios estaban en español de Argentina.** Los pasé a mi español.
 
 **Lo que descarté:** el informe de Playwright tiene un botón "Copy prompt" que pide a una IA "un fragmento de código con la solución" de un test fallido. En TC-04, esa "solución" habría sido cambiar lo esperado para que la prueba pasara y esconder el bug. Cuando una prueba falla, primero decido si el fallo es del test o del producto.
 
