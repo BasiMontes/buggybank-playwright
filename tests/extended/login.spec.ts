@@ -21,16 +21,19 @@ test.describe('Login', { tag: '@extended' }, () => {
     await expect(pages.dashboard.totalLabel).toBeVisible();
   });
 
-  test('LG-02 · un email con formato inválido muestra un mensaje claro y no llama al servidor', async ({ page, pages }) => {
+  test('LG-02 · con un email de formato inválido el botón queda deshabilitado y no se llama al servidor', async ({ page, pages }) => {
+    // La app no deja pulsar "Iniciar sesión" mientras el email no es válido (el botón queda `disabled`),
+    // así que lo que se comprueba es eso, no un mensaje tras el clic.
     const loginCalls: string[] = [];
     page.on('request', (r) => {
       if (r.url().includes('/api/auth/login')) loginCalls.push(r.url());
     });
 
     await pages.login.goto();
-    await pages.login.login('no-es-un-email', 'cualquiera');
+    await pages.login.emailInput.fill('no-es-un-email');
+    await pages.login.passwordInput.fill('cualquiera');
 
-    await expect(pages.login.message('Ingresa un email válido')).toBeVisible();
+    await expect(pages.login.submitButton).toBeDisabled();
     expect(loginCalls, 'La validación del frontend debía frenar el envío').toHaveLength(0);
     await expect(page).toHaveURL(/\/login/);
   });
@@ -44,8 +47,11 @@ test.describe('Login', { tag: '@extended' }, () => {
 
       await expect(page).toHaveURL(/\/login/);
       // Mensaje coherente con el resto de la app (español) y que no dice "Auth failed".
-      await expect.soft(pages.login.message(/credenciales|contraseña|incorrect|inválid/i)).toBeVisible();
-      await expect.soft(pages.login.message('Auth failed')).toBeHidden();
+      // El error sale en el elemento role="alert"; buscar texto suelto en toda la página
+      // coincidía con las etiquetas del formulario ("Contraseña", "Ingresar con credenciales").
+      const alert = page.getByRole('alert');
+      await expect(alert, 'Debía mostrarse un mensaje de error').toHaveText(/\S/);
+      await expect.soft(alert, 'El mensaje no debía estar en inglés ("Auth failed")').not.toContainText('Auth failed');
     },
   );
 

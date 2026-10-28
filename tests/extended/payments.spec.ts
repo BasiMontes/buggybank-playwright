@@ -32,12 +32,13 @@ function paymentData(source: Account, overrides: Partial<PaymentRequest> = {}): 
  * "2026-10-19" → regex que acepta "19 oct 2026" (formato de la UI en español).
  * @param anchored true = el texto completo debe ser la fecha; false = la fecha puede
  *                 estar dentro de un texto más largo (por ejemplo, una fila del listado).
+ *                 Sin \\b: en la fila el número de cuenta y la fecha vienen pegados ("…0030 oct 2026").
  */
 function displayedDatePattern(isoDate: string, anchored = true): RegExp {
   const [year, month, day] = isoDate.split('-').map(Number);
   const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept?', 'oct', 'nov', 'dic'];
   const core = `${day} ${months[month - 1]}\\.? ${year}`;
-  return new RegExp(anchored ? `^${core}$` : `\\b${core}\\b`, 'i');
+  return new RegExp(anchored ? `^${core}$` : `(?<!\\d)${core}(?!\\d)`, 'i');
 }
 
 test.describe('Pagos', { tag: '@extended' }, () => {

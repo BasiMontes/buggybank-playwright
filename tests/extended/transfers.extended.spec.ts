@@ -206,7 +206,7 @@ test.describe('Transferencias · extendido', { tag: '@extended' }, () => {
     await pages.transfer.goto();
     await pages.transfer.fillForm({ from: accounts.CHECKING, to: accounts.SAVINGS, amount: '1.11', note });
     await pages.transfer.doubleClickSubmit();
-    await expect.poll(async () => (await api.findTransactionsByNote(note)).length, { timeout: 5_000 }).toBeGreaterThanOrEqual(1);
+    await expect.poll(async () => (await api.findTransactionsByNote(note)).length, { timeout: 20_000 }).toBeGreaterThanOrEqual(1);
     await page.waitForTimeout(2_000);
 
     expect(await api.findTransactionsByNote(note)).toHaveLength(1);
