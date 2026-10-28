@@ -3,7 +3,7 @@
  *
  * ¿Qué es un fixture?
  * Es algo que Playwright prepara ANTES de un test y limpia DESPUÉS. El ejemplo más
- * conocido es `page`. Acá agregamos los nuestros:
+ * conocido es `page`. Aquí añadimos los nuestros:
  *
  *   api        → cliente de la API, YA LOGUEADO. Comparte cookies con `page`, así que
  *                la página también queda logueada sin pasar por el formulario.
@@ -18,7 +18,7 @@
  * INDEPENDENCIA DE LOS TESTS (lo pide el desafío):
  * Playwright crea un navegador "limpio" (BrowserContext) para cada test. Como el fixture
  * `api` hace login dentro de ese contexto, cada test tiene su propia sesión y NO depende
- * de que otro test haya corrido antes. Podés ejecutar cualquier test solo.
+ * de que otro test haya corrido antes. Puedes ejecutar cualquier test solo.
  */
 import { test as base, expect, APIRequestContext, TestInfo } from '@playwright/test';
 import { BuggyBankApi } from '../api/BuggyBankApi';
@@ -62,7 +62,7 @@ export const test = base.extend<Fixtures>({
     // Guardamos el saldo de CHECKING al empezar, para la limpieza final.
     const { CHECKING } = await api.getAccounts();
 
-    await use(api); // ← acá corre el test
+    await use(api); // ← aquí corre el test
 
     // TEARDOWN: pase lo que pase en el test (verde, rojo o error), devolvemos los saldos
     // a como estaban. Así el siguiente test arranca con datos "sanos" aunque este haya

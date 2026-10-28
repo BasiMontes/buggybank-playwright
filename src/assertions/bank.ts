@@ -2,7 +2,7 @@
  * bank.ts — Aserciones reutilizables "de negocio".
  *
  * La idea es que los tests digan QUÉ se espera ("los saldos cambiaron así", "no pasó
- * nada"), y que el CÓMO (comparar centavos, buscar el movimiento por nota) quede acá.
+ * nada"), y que el CÓMO (comparar centavos, buscar el movimiento por nota) quede aquí.
  *
  * ¿Por qué `expect.soft`?
  * Un `expect` normal corta el test en el primer fallo. Un `expect.soft` registra el fallo

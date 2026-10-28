@@ -2,9 +2,9 @@
  * transfers.extended.spec.ts — Cobertura extendida de Transferencias (TR-06 a TR-16).
  *
  * Complementa al núcleo @core con más valores límite, entradas raras y robustez.
- * Corré solo esto con:  npx playwright test tests/extended/transfers.extended.spec.ts
+ * Ejecuta solo esto con:  npx playwright test tests/extended/transfers.extended.spec.ts
  *
- * Técnicas de diseño usadas acá (vale la pena nombrarlas en la Charla):
+ * Técnicas de diseño usadas aquí (vale la pena nombrarlas en la Charla):
  * - VALORES LÍMITE: 0, 0.01 (mínimo), saldo, saldo + 0.01.
  * - PARTICIONES DE EQUIVALENCIA: negativo / cero / válido / no numérico / demasiados decimales.
  * - ORÁCULO DE CONSERVACIÓN: en transferencias entre cuentas propias el total no cambia.
@@ -195,7 +195,7 @@ test.describe('Transferencias · extendido', { tag: '@extended' }, () => {
     expect(await api.findTransactionsByNote(`${note}-vuelta`)).toHaveLength(1);
   });
 
-  test('TR-16 · un doble clic "humano" (con el mouse) genera una sola transferencia', async ({ api, accounts, page, pages }) => {
+  test('TR-16 · un doble clic "humano" (con el ratón) genera una sola transferencia', async ({ api, accounts, page, pages }) => {
     // Control de TC-05: este doble clic tiene milisegundos entre clic y clic, como una
     // persona real. En la exploración la app SÍ lo filtró. Tener los dos tests juntos
     // muestra que el bug aparece solo con envíos realmente simultáneos.

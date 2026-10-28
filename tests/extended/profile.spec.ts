@@ -96,7 +96,7 @@ test.describe('Perfil', { tag: '@extended' }, () => {
     { annotation: { type: 'issue', description: 'BUG-21: responde 200 "Saved profile" pero conserva el email anterior' } },
     async ({ api }, testInfo) => {
       // Usamos un email INVÁLIDO a propósito: si la app lo aceptara de verdad, no
-      // cambiaría tus credenciales por uno real que no controlás.
+      // cambiaría tus credenciales por uno real que no controlas.
       const res = await api.updateProfile({ ...original, email: 'no-es-email' });
       const body = await res.text();
       await attachEvidence(testInfo, 'respuesta', { status: res.status(), body });

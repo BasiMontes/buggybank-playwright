@@ -7,7 +7,7 @@
  * Preparación de datos: casi todos los tests crean SU PROPIO pago por API con un
  * beneficiario único. Así no dependen de los pagos semilla ni de otros tests.
  * Nota: la app no permite borrar pagos, así que cada ejecución deja algunos pagos
- * "QA-..." en el listado. No afectan a otros tests y desaparecen cuando vence el sandbox.
+ * "QA-..." en el listado. No afectan a otros tests y desaparecen cuando caduca el sandbox.
  */
 import { attachEvidence, expect, test } from '../../src/fixtures/test';
 import { Account, PaymentRequest } from '../../src/api/types';

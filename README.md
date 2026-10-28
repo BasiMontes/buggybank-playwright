@@ -1,165 +1,127 @@
 # BuggyBank · Suite de pruebas con Playwright
 
-Entrega del **Desafío BuggyBank** de Free Range Testers: suite automatizada contra [BuggyBank](https://buggybank-seven.vercel.app/login), un banco de práctica con bugs sembrados a propósito.
+Mi entrega del **Desafío BuggyBank** de Free Range Testers: pruebas automatizadas contra [BuggyBank](https://buggybank-seven.vercel.app/login), un banco de práctica con bugs sembrados a propósito.
 
 | | |
 |---|---|
-| **Flujo elegido (entrega)** | Transferencias — 5 pruebas `@core` |
-| **Cobertura extra** | Dashboard, Movimientos, Pagos, Perfil, Login y API — 61 pruebas `@extended` / `@api` |
+| **Flujo elegido** | Transferencias: 5 pruebas `@core` |
 | **Herramienta** | Playwright + TypeScript |
-| **Bugs documentados** | 23 → [`docs/BUGS.md`](docs/BUGS.md) |
+| **Resultado** | 2 en verde y 3 en rojo, los tres por bugs reales de la app |
+| **Hallazgo propio** | BUG-24: transferir el saldo exacto mueve el doble de dinero |
+| **Bugs documentados** | 24, en [`docs/BUGS.md`](docs/BUGS.md) |
 | **Plan de pruebas** | [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md) |
-| **Guía para leer el código** | [`docs/GUIA.md`](docs/GUIA.md) |
 
 ---
 
-## 1. Requisitos
+## Resultado de la entrega
 
-- **Node.js 18 o superior** (`node -v` para verificar).
-- Un **sandbox de BuggyBank** vigente (dura 24 horas).
-- Sistema operativo: Windows, macOS o Linux.
+Ejecución del 28/10/2026 con sandboxes nuevos (`npm run test:core`):
 
-## 2. Instalación
+| ID | Qué debería pasar | Riesgo que cubre | Resultado |
+|----|-------------------|------------------|-----------|
+| **TC-01** Transferencia válida (13.37) | Se debita el origen, se acredita el destino y queda un movimiento | Dinero que se pierde o se crea | ✅ Verde |
+| **TC-02** Importe negativo (-50) | Se rechaza sin efectos | Transferencia "al revés" | ✅ Verde: la interfaz lo bloquea (la API no, ver BUG-04) |
+| **TC-03** Fondos insuficientes (saldo + 0.01) | Se rechaza sin efectos | Descubierto | ❌ **Rojo → BUG-01** |
+| **TC-04** Saldo exacto | Se acepta y la cuenta queda en 0.00 | Límite mal programado (`>` frente a `>=`) | ❌ **Rojo → BUG-24** |
+| **TC-05** Doble envío simultáneo | Una sola transferencia | Cobro duplicado | ❌ **Rojo → BUG-02** |
+
+**Los rojos son intencionados.** El desafío pide no cambiar el resultado esperado para conseguir un verde: las cinco pruebas comprueban lo correcto y la que falla es la app. Cada rojo lleva una anotación con su bug, visible en el informe HTML.
+
+### El hallazgo: BUG-24
+
+TC-04 tenía que salir en verde: en la exploración del 17/10 transferir el saldo exacto funcionaba. Al ejecutarla, salió en rojo, y la traza de Playwright mostró por qué:
+
+1. Saldo antes: CHECKING 6,500 y SAVINGS 3,500.
+2. Sale **una sola petición** `POST /api/transfers` con `amount: 6500`, y el servidor responde `{"message":"OK transfer","duplicated":true}`.
+3. Saldo después: CHECKING **-6,500** y SAVINGS 16,500. Se ha movido **el doble**.
+4. En el historial hay **un solo movimiento** de 6,500. El saldo y el historial no cuadran.
+
+Se ha reproducido 3 de 3 veces, con dos importes distintos (6,500 y 19,500).
+
+> **Disparador:** _[completar con la exploración manual: qué importes mueven el doble]_
+
+## Cómo están diseñadas las pruebas
+
+**Saldos relativos y nota única.** Ninguna prueba compara contra un saldo fijo. Cada una toma una "foto" de los saldos por API al empezar, hace la acción por la interfaz y compara la diferencia **en céntimos enteros**, para evitar errores de coma flotante como `0.1 + 0.2 = 0.30000000000000004`. Cada operación lleva una nota única (`QA-TC01-<id>`) para encontrar exactamente ese movimiento. Así la suite funciona con cualquier sandbox y en cualquier orden.
+
+Otras decisiones:
+
+- **Doble comprobación, interfaz y API.** El mensaje "OK transfer" es la comprobación más débil; los saldos y el movimiento se verifican contra la API.
+- **`expect.soft`** en las comprobaciones de negocio: si falla el débito, se siguen evaluando el crédito, el total y el movimiento, y el informe lo muestra todo.
+- **TC-01 no comprueba `direction`**, porque está roto en todas las transferencias (BUG-09). Si lo comprobara, un bug de Movimientos taparía el resultado real de la transferencia.
+- **Un solo worker:** todas las pruebas usan las mismas dos cuentas; en paralelo se pisarían los saldos.
+- **Limpieza que se comprueba:** al terminar, cada prueba devuelve CHECKING a su saldo inicial y **verifica** que lo ha conseguido. Si no, el informe muestra un aviso para crear un sandbox nuevo.
+- **Esperas explícitas:** ninguna prueba usa esperas fijas (`waitForTimeout`).
+
+## Requisitos e instalación
+
+- **Node.js 18 o superior** (`node --version`).
+- Un **sandbox de BuggyBank** activo (dura 24 horas).
 
 ```bash
-git clone <URL-de-este-repo>
+git clone https://github.com/BasiMontes/buggybank-playwright.git
 cd buggybank-playwright
-npm install                 # instala Playwright, TypeScript y dotenv
-npm run install:browsers    # descarga Chromium para Playwright (una sola vez)
+npm install
+npm run install:browsers
 ```
 
-## 3. Preparar el sandbox (cada 24 horas)
+## Preparar el sandbox (cada 24 horas)
 
-1. Entrá a <https://buggybank-seven.vercel.app/login>.
-2. Escribí el **código del curso** en "Código del curso" y tocá **Crear usuario temporal**.
-3. Copiá el email y la contraseña que te da la app.
-4. Creá tu archivo de credenciales a partir de la plantilla:
+1. Entra en <https://buggybank-seven.vercel.app/login>.
+2. Escribe el **código del curso** y pulsa **Crear usuario temporal**.
+3. Crea el archivo de credenciales y rellena el email y la contraseña que te da la app:
 
    ```bash
    cp .env.example .env
    ```
 
-5. Completá `.env`:
+> ⚠️ El `.env` está en `.gitignore` y **nunca se sube**. Cuando el sandbox caduque, crea otro y actualiza esos dos valores.
 
-   ```
-   BB_BASE_URL=https://buggybank-seven.vercel.app
-   BB_EMAIL=<tu email del sandbox>
-   BB_PASSWORD=<tu contraseña del sandbox>
-   ```
+## Ejecutar
 
-> ⚠️ El `.env` está en `.gitignore` y **nunca se sube**. El código del curso no hace falta en el `.env`: las pruebas usan un usuario ya creado.
-> Cuando el sandbox vence, creá uno nuevo y actualizá estos dos valores. Las pruebas **no dependen de los datos iniciales**: leen los saldos al empezar.
-
-## 4. Ejecutar
-
-| Comando | Qué corre |
+| Comando | Qué ejecuta |
 |---|---|
 | `npm run test:core` | **La entrega:** las 5 pruebas de Transferencias |
-| `npm test` | Toda la suite (66 pruebas, ~10 min) |
-| `npm run test:extended` | Solo la cobertura extendida de UI |
-| `npm run test:api` | Solo las pruebas de API |
-| `npm run test:headed` | Las `@core` con el navegador visible (para ver qué hace) |
-| `npm run test:ui` | Modo interactivo de Playwright: elegís y mirás cada test paso a paso |
-| `npm run report` | Abre el reporte HTML de la última ejecución |
-| `npm run typecheck` | Verifica tipos sin ejecutar nada |
+| `npm run test:headed` | Las mismas, con el navegador visible |
+| `npm run report` | Abre el informe HTML de la última ejecución |
+| `npm run typecheck` | Comprueba los tipos sin ejecutar nada |
 
-Un test puntual: `npx playwright test -g "TC-03"`.
+Una prueba concreta: `npx playwright test -g "TC-04"`.
 
-## 5. Las 5 pruebas de la entrega
+## Evidencia
 
-| ID | Qué debería pasar | Riesgo que cubre | Cómo se comprueba | Resultado |
-|----|-------------------|------------------|-------------------|-----------|
-| **TC-01** Transferencia válida (13.37) | Se debita el origen, se acredita el destino y queda un movimiento | Dinero que se pierde o se crea | Saldos antes/después por API (en centavos), total conservado, 1 movimiento con monto/estado/cuentas correctos, saldo actualizado en pantalla y fila en el historial | ✅ Verde |
-| **TC-02** Monto negativo (-50) | Se rechaza sin efectos | Transferencia "al revés" | Mensaje de validación + saldos iguales + sin movimiento + ningún POST enviado | ✅ Verde (la UI bloquea; la API no → AP-01a) |
-| **TC-03** Fondos insuficientes (saldo + 0.01) | Se rechaza sin efectos | Sobregiro | Sin mensaje de éxito + saldos iguales + sin movimiento + saldos con ≤ 2 decimales | ❌ **Rojo → BUG-01** |
-| **TC-04** Saldo exacto | Se acepta y la cuenta queda en 0.00 | Límite mal programado (`>` vs `>=`) | Saldo origen = 0 exacto + delta correcto + 1 movimiento | ✅ Verde |
-| **TC-05** Doble submit simultáneo | Una sola transferencia | Cobro duplicado | Cantidad de movimientos con la nota + delta de saldos + POSTs registrados como evidencia | ❌ **Rojo → BUG-02** |
+`npm run report` abre el informe HTML. Para cada prueba fallida hay **captura**, **vídeo**, **traza** (DOM, red y consola paso a paso), **adjuntos JSON** con los saldos antes y después y las respuestas de la API, y una **anotación** con el bug.
 
-Los resultados "previstos" salen de la exploración manual del 17/10/2026. **Los rojos son intencionales**: el desafío pide no cambiar el resultado esperado para conseguir un verde. Cada test rojo tiene una anotación con el ID del bug, visible en el reporte HTML.
+> 📸 _[Añadir aquí `docs/reporte.png`, revisando que no se vea el email del sandbox]_
 
-### Decisión de diseño principal
+## Uso de IA
 
-**Saldos relativos + nota única.** Ninguna prueba compara contra un saldo fijo ("6,500.00"). Cada una saca una "foto" de los saldos por API al empezar, hace la acción por la UI y compara la diferencia **en centavos enteros** (para evitar errores de punto flotante como `0.1 + 0.2 = 0.30000000000000004`). Cada operación lleva una nota única (`QA-TC01-<id>`) para encontrar *ese* movimiento y no uno parecido de otra ejecución. Así la suite funciona con cualquier sandbox y en cualquier orden.
+He trabajado con Claude (Anthropic). Esto es lo que hizo cada parte:
 
-Otras decisiones (detalle en [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)):
-
-- **Doble oráculo UI + API:** el mensaje "OK transfer" es el chequeo más débil; los saldos y el movimiento se verifican contra la API.
-- **`expect.soft`** en las verificaciones de negocio: si falla el débito, igual se evalúan el crédito, el total y el movimiento, y el reporte muestra todo.
-- **En TC-01 no se verifica `direction`**, porque está roto para todas las transferencias (BUG-09). Si se verificara, un bug de Movimientos taparía el resultado real de la transferencia. Lo cubre MV-03.
-- **Un solo worker:** todas las pruebas comparten las mismas dos cuentas; en paralelo se pisarían los saldos.
-- **Limpieza automática:** el fixture `api` devuelve CHECKING a su saldo inicial al terminar cada test, aunque el test haya fallado.
-
-## 6. Preparación de datos
-
-| Qué | Cómo |
-|-----|------|
-| Sesión | El fixture `api` hace login por `POST /api/auth/login` en el mismo contexto del navegador → la página queda logueada sin pasar por el formulario (excepto en los tests de Login, que prueban el formulario). |
-| Cuentas | Se leen de `/api/dashboard` **por tipo** (`CHECKING` / `SAVINGS`), nunca por posición: el orden del array cambia entre llamadas. |
-| Saldos | "Foto" antes y después en cada test. |
-| Pagos | Cada test de Pagos crea su propio pago por API con beneficiario único. |
-| Perfil | Se guarda el original en `beforeEach` y se restaura en `afterEach`. |
-| Limpieza | Saldos restaurados por el fixture. Quedan en el historial los movimientos `QA-...` y `QA-teardown restore`, y los pagos de prueba (la app no permite borrarlos). Desaparecen al vencer el sandbox. |
-
-## 7. Evidencia y reporte
-
-Al terminar, `npm run report` abre el reporte HTML. Para cada test fallido hay:
-
-- **Captura** de pantalla del momento del fallo.
-- **Video** de la ejecución.
-- **Trace**: grabación paso a paso con DOM, red y consola (`Ver trace` en el reporte).
-- **Adjuntos JSON** (`evidencia-TC03`, etc.) con saldos antes/después y respuestas de la API.
-- **Anotación** con el ID del bug esperado.
-
-> 📸 _Captura del reporte:_ agregar acá `docs/reporte.png` después de la primera ejecución. Antes de subirla, revisá que no se vea el email del sandbox (aparece en el saludo del dashboard si la captura incluye el encabezado).
-
-## 8. Estructura del proyecto
-
-```
-buggybank-playwright/
-├── playwright.config.ts        Configuración: 1 worker, sin reintentos, evidencia al fallar
-├── .env.example                Plantilla de credenciales (sin valores)
-├── src/
-│   ├── config/env.ts           Lee y valida variables de entorno
-│   ├── api/
-│   │   ├── types.ts            Forma de los datos de la API
-│   │   └── BuggyBankApi.ts     Cliente de la API (login, saldos, transferencias, pagos, perfil)
-│   ├── fixtures/test.ts        Fixtures: api logueada, cuentas, page objects, evidencia
-│   ├── assertions/bank.ts      Aserciones de negocio (delta de saldos, "no pasó nada")
-│   ├── pages/                  Page Objects, uno por pantalla
-│   └── utils/                  Dinero en centavos, datos únicos, fechas
-├── tests/
-│   ├── core/                   ⭐ La entrega: 5 pruebas de Transferencias
-│   ├── extended/               Transferencias extra, Dashboard, Movimientos, Pagos, Perfil, Login
-│   └── api/                    Reglas y contrato de la API
-└── docs/
-    ├── TEST_PLAN.md            Casos, riesgos y decisiones
-    ├── BUGS.md                 23 hallazgos con esperado / obtenido / test que lo detecta
-    └── GUIA.md                 Cómo leer el código, en orden
-```
-
-## 9. Uso de IA
-
-Trabajé con Claude (Anthropic) como asistente. Detalle de qué hizo cada parte:
-
-| Etapa | Qué generó la IA | Qué revisé / decidí yo |
+| Etapa | Qué hizo la IA | Qué hice yo |
 |---|---|---|
-| Exploración | Recorrió la app en un navegador con mi sesión iniciada, registró endpoints, `data-testid` y respuestas de la API, y ejecutó las operaciones exploratorias que autoricé. | Autoricé cada tipo de operación. Repasé los hallazgos en la app. |
-| Diseño | Propuso el plan de casos, los riesgos y las decisiones (saldos relativos, nota única, doble oráculo). | Elegí el flujo, el framework y el nivel de cobertura. Cambié el segundo borde del núcleo a doble submit. |
-| Código | Escribió la suite completa con comentarios explicativos. | _Completar después de revisar:_ qué entendí, qué cambié, qué test ajusté tras la primera ejecución. |
-| Correcciones de la IA | Detectó que el orden de las cuentas en la API no es estable y que un doble clic "humano" no reproduce el bug de doble submit; ajustó los tests en consecuencia. | _Completar:_ correcciones propias. |
+| **Exploración (17/10)** | Recorrió la app en un navegador con mi sesión iniciada, registró endpoints, `data-testid` y respuestas de la API, y ejecutó las operaciones que le autoricé. | Inicié sesión yo (la IA nunca escribió mi contraseña) y autoricé cada tipo de operación. |
+| **Diseño** | Propuso el plan de casos, los riesgos y las decisiones principales (saldos relativos, nota única, doble comprobación). | Elegí el flujo y la herramienta, y cambié el segundo caso límite a doble envío. |
+| **Código** | Escribió la suite completa, comentada. | La ejecuté por primera vez el 28/10 y revisé cada fallo en las trazas. |
+| **Revisión (28/10)** | Me ayudó a leer las trazas y a proponer cambios. | Decidí qué cambiar y qué no (abajo). |
 
-> La IA no inició sesión con mis credenciales: yo inicié sesión en el navegador y ella trabajó sobre esa sesión. El código lee las credenciales solo desde mi `.env` local.
+**Lo que cambié tras ejecutarla:**
 
-## 10. Pendiente
+- **TC-04 no se tocó para que saliera en verde.** El rojo era un bug nuevo de la app (BUG-24), así que le añadí la anotación y lo documenté.
+- **La limpieza no comprobaba nada.** En TC-04, la transferencia que devuelve el dinero también se duplicó y dejó el sandbox descuadrado sin avisar. Ahora la limpieza verifica el saldo y, si no cuadra, lo dice en el informe.
+- **TC-05 tenía una espera fija de 2 segundos.** La traza mostró que las dos peticiones salen a la vez, pero responden a los 1,8 s y a los 4,4 s: la espera acertaba por poco. La cambié por una espera explícita hasta que todas las peticiones tienen respuesta.
+- **Los comentarios estaban en español de Argentina.** Los pasé a mi español.
 
-- **Ejecutar la suite completa** contra un sandbox nuevo y ajustar los selectores que fallen por motivos técnicos (no por bugs). La suite se escribió a partir de la exploración y pasa `typecheck` y `--list`, pero esta primera versión todavía no se corrió de punta a punta.
-- **BUG-10** (mensaje de éxito viejo junto al error) no tiene test.
-- **PG-02 (pago mayor al saldo) y PG-09 (efecto financiero del pago)** quedan como preguntas: no está claro si es un bug o una regla del sandbox.
-- Agregar la captura del reporte (sección 7).
-- Posible mejora: correr la suite en GitHub Actions con las credenciales como *secrets*.
+**Lo que descarté:** el informe de Playwright tiene un botón "Copy prompt" que pide a una IA "un fragmento de código con la solución" de un test fallido. En TC-04, esa "solución" habría sido cambiar lo esperado para que la prueba pasara y esconder el bug. Cuando una prueba falla, primero decido si el fallo es del test o del producto.
 
-## 11. Para conversar en la Charla
+## Pendiente
 
-- **Bug:** el doble submit (TC-05). Con un doble clic "humano" la app lo filtra; con dos clics en el mismo instante crea dos transferencias, y el servidor responde `duplicated: false` en las dos. Un campo `duplicated` sugiere que la protección existe pero no funciona.
-- **Decisión:** no verificar `direction` en TC-01 para que un bug ajeno no tape el resultado de la transferencia.
-- **Pregunta:** ¿PG-09 es un bug? Un pago completado no mueve el saldo. ¿Es una simplificación del sandbox o un error?
+- **Encontrar el disparador de BUG-24** con una exploración manual.
+- **La suite extendida (`tests/extended`, `tests/api`, 61 pruebas) no está revisada.** La generó la IA en la exploración y aún no la he ejecutado ni repasado; la entrega son solo las 5 pruebas `@core`.
+- Ejecutar la suite en GitHub Actions con las credenciales como *secrets* (hoy no es práctico: el sandbox caduca cada 24 horas).
+
+## Para comentar en la charla
+
+- **Bug:** BUG-24. Una sola petición, el doble de dinero movido y un solo movimiento en el historial.
+- **Decisión:** las esperas explícitas. La traza demostró que la espera fija de TC-05 era frágil.
+- **Pregunta:** en la traza, la cookie de sesión se llama `bb_user` y su valor parece ser el identificador del usuario. Si el servidor no comprueba nada más, ¿se podría suplantar a otro usuario? No lo he probado para no afectar a los sandboxes de otras personas.

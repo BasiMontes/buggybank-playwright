@@ -1,6 +1,6 @@
 # Guía para entender la suite
 
-Esta guía recorre el proyecto **en el orden en que conviene leerlo**. Cada archivo tiene comentarios línea por línea; acá está el mapa general y los conceptos.
+Esta guía recorre el proyecto **en el orden en que conviene leerlo**. Cada archivo tiene comentarios línea por línea; aquí está el mapa general y los conceptos.
 
 ---
 
@@ -97,7 +97,7 @@ Si un test falla por un motivo **técnico** (un selector que no encuentra el ele
 7. `tests/api/transfers.api.spec.ts`: la misma regla, probada por la "otra puerta".
 8. El resto de `tests/extended/` en el orden que te interese.
 
-## Paso 5 · Cómo agregar una prueba nueva
+## Paso 5 · Cómo añadir una prueba nueva
 
 ```ts
 import { expect, test } from '../../src/fixtures/test';

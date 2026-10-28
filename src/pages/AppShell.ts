@@ -34,7 +34,7 @@ export class AppShell {
 
   /**
    * Asegura que QA Mode esté apagado. QA Mode muestra pistas en pantalla; no cambia el
-   * comportamiento, pero agrega textos que podrían confundir a los locators por texto.
+   * comportamiento, pero añade textos que podrían confundir a los locators por texto.
    */
   async ensureQaModeOff(): Promise<void> {
     if ((await this.qaModeToggle.count()) > 0 && (await this.qaModeToggle.isChecked())) {

@@ -99,10 +99,10 @@ export class TransferPage extends AppShell {
    *
    * ¿Por qué no usamos `dblclick()` o `Promise.all([click(), click()])`?
    * Playwright, antes de cada click, espera que el botón esté "accionable" y simula
-   * el mouse. Eso agrega milisegundos entre los dos clics, como haría una persona,
+   * el ratón. Eso añade milisegundos entre los dos clics, como haría una persona,
    * y en la exploración ese doble clic "humano" SÍ fue filtrado por la app.
    *
-   * El riesgo real es un doble envío en el mismo instante (doble tap en el celular,
+   * El riesgo real es un doble envío en el mismo instante (doble toque en el móvil,
    * un script, un reintento automático). Para reproducirlo disparamos los dos clics
    * dentro del navegador, en el mismo "tick" de JavaScript, con `element.click()`.
    */
@@ -113,7 +113,7 @@ export class TransferPage extends AppShell {
     });
   }
 
-  /** Doble clic "humano" con el mouse de Playwright (para comparar con el simultáneo). */
+  /** Doble clic "humano" con el ratón de Playwright (para comparar con el simultáneo). */
   async doubleClickSubmit(): Promise<void> {
     await this.submitButton.dblclick();
   }

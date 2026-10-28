@@ -31,7 +31,7 @@ export class TransactionsPage extends AppShell {
 
   constructor(page: Page) {
     super(page);
-    // data-testid confirmados en la exploración (no están en todas las pantallas: acá sí).
+    // data-testid confirmados en la exploración (no están en todas las pantallas: aquí sí).
     this.directionSelect = page.getByTestId('transactions-direction');
     this.searchInput = page.getByTestId('transactions-search');
     this.rows = page.locator('main table tbody tr');

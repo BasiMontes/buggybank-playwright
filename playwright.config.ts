@@ -38,7 +38,7 @@ export default defineConfig({
   // Reportes:
   // - list: lo que ves en la terminal mientras corre.
   // - html: el reporte navegable con capturas, videos y traces (npm run report).
-  //   open: 'never' para que no abra el navegador solo; lo abrís cuando quieras.
+  //   open: 'never' para que no abra el navegador solo; lo abres cuando quieras.
   reporter: [['list'], ['html', { open: 'never' }]],
 
   use: {

@@ -9,7 +9,7 @@
  * En la exploración, la UI bloqueó -50 y 0, pero la API aceptó todo con 200.
  *
  * Patrón: `for` sobre una tabla de casos → un test por fila ("pruebas parametrizadas").
- * Agregar un caso nuevo es agregar una línea a la tabla.
+ * Añadir un caso nuevo es añadir una línea a la tabla.
  */
 import { attachEvidence, expect, test } from '../../src/fixtures/test';
 import { expectCleanBalances, expectNoSideEffects } from '../../src/assertions/bank';

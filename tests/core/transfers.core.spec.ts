@@ -1,7 +1,7 @@
 /**
  * transfers.core.spec.ts — LA ENTREGA DEL DESAFÍO: 5 pruebas de Transferencias.
  *
- * Corré solo estas con:  npm run test:core
+ * Ejecuta solo estas con:  npm run test:core
  *
  * ┌───────┬──────────────────────────────┬────────────────────────────┬──────────────────┐
  * │ ID    │ Caso                         │ Riesgo que cubre           │ Resultado previsto│
@@ -64,7 +64,7 @@ test.describe('Transferencias @core', () => {
 
       // 3) El movimiento quedó registrado UNA vez, con los datos correctos.
       //    NO verificamos `direction` a propósito: está roto para todas las transferencias
-      //    (BUG-09) y lo cubre MV-03. Si lo verificáramos acá, este test quedaría rojo por
+      //    (BUG-09) y lo cubre MV-03. Si lo verificáramos aquí, este test quedaría rojo por
       //    un bug de OTRO módulo y taparía el resultado real de la transferencia.
       const movements = await api.findTransactionsByNote(note);
       expect(movements, 'Debía registrarse exactamente un movimiento con la nota de la prueba').toHaveLength(1);
@@ -118,7 +118,7 @@ test.describe('Transferencias @core', () => {
       expect.soft(transferRequests, 'El frontend no debía enviar la transferencia al servidor').toHaveLength(0);
 
       // OJO: que esto quede VERDE no significa que el riesgo esté cubierto del todo.
-      // La API acepta -50 si se lo mandás directo (BUG-04). Eso lo prueba AP-01 en tests/api.
+      // La API acepta -50 si se lo mandas directamente (BUG-04). Eso lo prueba AP-01 en tests/api.
       await attachEvidence(testInfo, 'evidencia-TC02', { note, before, transferRequests });
     },
   );

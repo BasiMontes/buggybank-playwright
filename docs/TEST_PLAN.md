@@ -113,7 +113,7 @@ Datos semilla: CHECKING `$6,500.00` + SAVINGS `$3,500.00` = `$10,000.00` (moneda
    BB_EMAIL=
    BB_PASSWORD=
    ```
-3. A las 24 h el sandbox vence: crear otro y actualizar el `.env`.
+3. A las 24 h el sandbox caduca: crear otro y actualizar el `.env`.
 
 ## 6. Exploración realizada
 

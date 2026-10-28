@@ -46,13 +46,13 @@ export class BuggyBankApi {
 
   /**
    * Login que DEBE funcionar (precondición de casi todos los tests).
-   * Si falla, cortamos con un mensaje que apunta a la causa más probable: el sandbox venció.
+   * Si falla, cortamos con un mensaje que apunta a la causa más probable: el sandbox ha caducado.
    */
   async loginOrFail(email: string, password: string): Promise<void> {
     const res = await this.login(email, password);
     expect(
       res.ok(),
-      `El login por API falló (${res.status()}). ¿Venció el sandbox de 24 h? Creá uno nuevo y actualizá el .env.`,
+      `El login por API falló (${res.status()}). ¿Ha caducado el sandbox de 24 h? Crea uno nuevo y actualiza el .env.`,
     ).toBeTruthy();
   }
 
@@ -205,7 +205,7 @@ export class BuggyBankApi {
 
   /**
    * POST /api/payments/:id/transitions { action, idempotencyKey }.
-   * La "clave de idempotencia" identifica una intención: si mandás la misma clave dos
+   * La "clave de idempotencia" identifica una intención: si mandas la misma clave dos
    * veces, el servidor debería aplicar el cambio una sola vez.
    */
   async transition(id: string, action: PaymentAction, idempotencyKey: string): Promise<APIResponse> {
