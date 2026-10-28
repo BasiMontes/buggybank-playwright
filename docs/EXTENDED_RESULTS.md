@@ -93,6 +93,22 @@ Leídas una a una, buscando las que podrían pasar sin comprobar nada:
 La limpieza devolvía el dinero con una sola transferencia. Si la diferencia era un importe entero ≥ 500 (como tras TC-04, que deja la cuenta en -6.500 y necesita 13.000), esa transferencia **se duplicaba** y el saldo no volvía a su sitio (la comprobación lo detectaba y avisaba).
 Ahora esos importes se parten en `importe - 0.01` y `0.01`, que llevan decimales y no disparan el bug. Pendiente de comprobar con una ejecución.
 
+## Ejecución completa (70 pruebas, sandbox nuevo, 1 worker, 14,5 min)
+
+**44 en verde y 26 en rojo.** Coincide con lo previsto: los 26 rojos son los 21 esperados más TR-17 en 500 y 1.000.
+
+| Grupo | Verde | Rojo |
+|---|---|---|
+| Entrega `@core` (5) | 2 (TC-01, TC-02) | 3 (TC-03 BUG-01, TC-04 BUG-24, TC-05 BUG-02) |
+| API `@api` (18) | 10 | 8 (AP-02, AP-01a–f, AP-04: bugs 22, 04–07, 01, 02) |
+| Extendidas `@extended` (47) | 32 | 15 |
+
+- **Sin avisos de limpieza.** Ninguna prueba dejó el sandbox descuadrado, así que la separación de importes funciona.
+- **TR-17 confirma BUG-24 también por API:** 499 y 500,50 en verde (un movimiento, saldo exacto); 500 y 1.000 en rojo porque el saldo se mueve el doble (−100.000 en vez de −50.000, y −200.000 en vez de −100.000).
+- **PG-06 pasó** en esta ejecución. Van 1 fallo y 7 pasadas en total: sigue siendo inestable, no confirmada.
+- **PG-04 (fecha en el listado) pasó** y LG-02 (email) también.
+- Siguen en rojo, como se esperaba: LG-02 contraseña (BUG-23), MV-06 (BUG-15, el estado CANCELLED no se muestra), PG-02 y PG-09 (preguntas abiertas), y el resto de bugs documentados.
+
 ## Lo que esta revisión deja claro
 
 - 19 de los 24 rojos son la app, no las pruebas. Eso valida la suite como detector, pero no su calidad: hay que mirar las **37 en verde** por si alguna pasa sin comprobar nada (TR-12, TR-14 y TR-13 son las candidatas).
