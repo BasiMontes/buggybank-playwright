@@ -87,10 +87,17 @@ npm run install:browsers
 
 | Comando | Qué ejecuta |
 |---|---|
-| `npm run test:core` | **La entrega:** las 5 pruebas de Transferencias |
-| `npm run test:headed` | Las mismas, con el navegador visible |
+| `npm run install:browsers` | Descarga Chromium (solo la primera vez) |
+| `npm run test:core` | **La entrega:** las 5 pruebas `@core` de Transferencias |
+| `npm run test:headed` | Las mismas 5, con el navegador visible |
+| `npm run test:extended` | La suite extendida por interfaz (`@extended`), sin revisar |
+| `npm run test:api` | Las pruebas directas de API (`@api`), sin revisar |
+| `npm test` | Todo junto: las 5 de la entrega y las 61 sin revisar (66) |
+| `npm run test:ui` | El modo interactivo de Playwright |
 | `npm run report` | Abre el informe HTML de la última ejecución |
 | `npm run typecheck` | Comprueba los tipos sin ejecutar nada |
+
+> ⚠️ La suite extendida y la de API no están pensadas para ejecutarse sobre el mismo sandbox que la entrega: BUG-24 duplica transferencias y puede dejar los saldos descuadrados. Crea un sandbox nuevo antes de cada ejecución.
 
 Una prueba concreta: `npx playwright test -g "TC-04"`.
 
