@@ -130,7 +130,8 @@ export class BuggyBankApi {
    */
   async findTransactionsByNote(note: string): Promise<Transaction[]> {
     const all = await this.getTransactions('all', '');
-    return all.filter((t) => t.note === note);
+    // BUG-24: el servidor registra el duplicado como "<nota> (duplicate)"; hay que contarlo
+    return all.filter((t) => t.note === note || t.note === `${note} (duplicate)`);
   }
 
   /**

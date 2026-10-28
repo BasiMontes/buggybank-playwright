@@ -172,7 +172,7 @@ test.describe('Transferencias @core', () => {
       tag: '@core',
       annotation: {
         type: 'issue',
-        description: 'BUG-24: transferir el saldo exacto mueve el doble (duplicated:true) y registra un solo movimiento',
+        description: 'BUG-24: una transferencia de importe entero >= 500 se aplica dos veces (duplicated:true) y crea un segundo movimiento "(duplicate)"',
       },
     },
     async ({ api, accounts, pages }, testInfo) => {

@@ -7,7 +7,7 @@ Mi entrega del **Desafío BuggyBank** de Free Range Testers: pruebas automatizad
 | **Flujo elegido** | Transferencias: 5 pruebas `@core` |
 | **Herramienta** | Playwright + TypeScript |
 | **Resultado** | 2 en verde y 3 en rojo, los tres por bugs reales de la app |
-| **Hallazgo propio** | BUG-24: transferir el saldo exacto mueve el doble de dinero |
+| **Hallazgo propio** | BUG-24: las transferencias de importe entero ≥ 500 se aplican dos veces |
 | **Bugs documentados** | 24, en [`docs/BUGS.md`](docs/BUGS.md) |
 | **Plan de pruebas** | [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md) |
 
@@ -34,11 +34,17 @@ TC-04 tenía que salir en verde: en la exploración del 17/10 transferir el sald
 1. Saldo antes: CHECKING 6,500 y SAVINGS 3,500.
 2. Sale **una sola petición** `POST /api/transfers` con `amount: 6500`, y el servidor responde `{"message":"OK transfer","duplicated":true}`.
 3. Saldo después: CHECKING **-6,500** y SAVINGS 16,500. Se ha movido **el doble**.
-4. En el historial hay **un solo movimiento** de 6,500. El saldo y el historial no cuadran.
+4. En el historial aparece un **segundo movimiento** con la nota `… (duplicate)`. Mi primera lectura fue que había uno solo: la prueba buscaba la nota exacta y no veía el duplicado (ya la he corregido).
 
-Se ha reproducido 3 de 3 veces, con dos importes distintos (6,500 y 19,500).
+**El disparador no era el saldo exacto.** Lo localicé a mano con análisis de valores límite, transfiriendo importes distintos con una nota para cada uno:
 
-> **Disparador:** _[completar con la exploración manual: qué importes mueven el doble]_
+| Importe | ¿Se duplica? |
+|---|---|
+| 100 · 101 · 300 · **499** | No |
+| **500** · 999 · 1.000 · 3.000 · 6.500 · 13.000 · 19.500 | **Sí** |
+| 2,22 · 13,37 · 99,99 · 3.500,50 · 6.500,01 | No |
+
+> **Una transferencia de importe entero de 500 o más se aplica dos veces.** Con decimales no ocurre. TC-04 lo destapó porque el saldo exacto (6.500) cumple esa condición. Solo he probado esos importes; no sé si hay más disparadores.
 
 ## Cómo están diseñadas las pruebas
 
@@ -112,18 +118,18 @@ He trabajado con Claude (Anthropic). Esto es lo que hizo cada parte:
 - **TC-04 no se tocó para que saliera en verde.** El rojo era un bug nuevo de la app (BUG-24), así que le añadí la anotación y lo documenté.
 - **La limpieza no comprobaba nada.** En TC-04, la transferencia que devuelve el dinero también se duplicó y dejó el sandbox descuadrado sin avisar. Ahora la limpieza verifica el saldo y, si no cuadra, lo dice en el informe.
 - **TC-05 tenía una espera fija de 2 segundos.** La traza mostró que las dos peticiones salen a la vez, pero responden a los 1,8 s y a los 4,4 s: la espera acertaba por poco. La cambié por una espera explícita hasta que todas las peticiones tienen respuesta.
+- **La IA concluyó que el disparador era el saldo exacto, y estaba equivocada.** Mi exploración manual lo desmintió (6.500 con un saldo de 45.500 también se duplica) y localizó el límite real en 500.
 - **Los comentarios estaban en español de Argentina.** Los pasé a mi español.
 
 **Lo que descarté:** el informe de Playwright tiene un botón "Copy prompt" que pide a una IA "un fragmento de código con la solución" de un test fallido. En TC-04, esa "solución" habría sido cambiar lo esperado para que la prueba pasara y esconder el bug. Cuando una prueba falla, primero decido si el fallo es del test o del producto.
 
 ## Pendiente
 
-- **Encontrar el disparador de BUG-24** con una exploración manual.
 - **La suite extendida (`tests/extended`, `tests/api`, 61 pruebas) no está revisada.** La generó la IA en la exploración y aún no la he ejecutado ni repasado; la entrega son solo las 5 pruebas `@core`.
 - Ejecutar la suite en GitHub Actions con las credenciales como *secrets* (hoy no es práctico: el sandbox caduca cada 24 horas).
 
 ## Para comentar en la charla
 
-- **Bug:** BUG-24. Una sola petición, el doble de dinero movido y un solo movimiento en el historial.
+- **Bug:** BUG-24. Una sola petición mueve el doble si el importe es entero y ≥ 500; lo acoté con valores límite (499 no, 500 sí).
 - **Decisión:** las esperas explícitas. La traza demostró que la espera fija de TC-05 era frágil.
 - **Pregunta:** en la traza, la cookie de sesión se llama `bb_user` y su valor parece ser el identificador del usuario. Si el servidor no comprueba nada más, ¿se podría suplantar a otro usuario? No lo he probado para no afectar a los sandboxes de otras personas.
