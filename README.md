@@ -62,8 +62,10 @@ Otras decisiones:
 
 ## Requisitos e instalación
 
-- **Node.js 18 o superior** (`node --version`).
-- Un **sandbox de BuggyBank** activo (dura 24 horas).
+- **Node.js 18 o superior** (`node --version`). Si no lo tienes, instálalo desde <https://nodejs.org>.
+- Un **sandbox de BuggyBank** activo (dura 24 horas, ver más abajo).
+
+Solo la primera vez, en la terminal, dentro de la carpeta del proyecto:
 
 ```bash
 git clone https://github.com/BasiMontes/buggybank-playwright.git
@@ -74,15 +76,59 @@ npm run install:browsers
 
 ## Preparar el sandbox (cada 24 horas)
 
+Un sandbox es un usuario temporal de BuggyBank con dos cuentas (CHECKING y SAVINGS) y saldos de práctica. Caduca a las 24 horas, así que hay que crear uno nuevo cada día que vayas a ejecutar las pruebas.
+
 1. Entra en <https://buggybank-seven.vercel.app/login>.
-2. Escribe el **código del curso** y pulsa **Crear usuario temporal**.
-3. Crea el archivo de credenciales y rellena el email y la contraseña que te da la app:
+2. Escribe el **código del curso** en el campo *Código del curso* y pulsa **Crear usuario temporal**.
+3. La app te muestra un **email** y una **contraseña**. Cópialos.
+4. En la terminal, crea tu archivo de configuración (solo la primera vez):
 
    ```bash
    cp .env.example .env
    ```
 
-> ⚠️ El `.env` está en `.gitignore` y **nunca se sube**. Cuando el sandbox caduque, crea otro y actualiza esos dos valores.
+5. Ábrelo y pega el email y la contraseña en `BB_EMAIL=` y `BB_PASSWORD=`:
+
+   ```bash
+   open -e .env
+   ```
+
+   No cambies `BB_BASE_URL`. El resto del archivo son comentarios.
+
+> ⚠️ El `.env` está en `.gitignore` y **nunca se sube** al repositorio. Cuando el sandbox caduque, crea otro y actualiza solo esos dos valores.
+
+## Cómo ejecutar la entrega (`@core`), paso a paso
+
+Estos son los pasos para las 5 pruebas de la entrega. Hazlo siempre con un sandbox recién creado.
+
+1. **Abre la terminal** y ve a la carpeta del proyecto:
+   ```bash
+   cd ~/Desktop/QA/"Upgrade QA"/FreeRangeTester/BuggyBank/buggybank-playwright
+   ```
+2. **Comprueba que el `.env` tiene tu sandbox de hoy** (`BB_EMAIL` y `BB_PASSWORD` rellenos).
+3. **Ejecuta las pruebas** (tardan unos 1,5 minutos):
+   ```bash
+   npm run test:core
+   ```
+   Resultado esperado: **2 en verde** (TC-01 y TC-02) y **3 en rojo** (TC-03, TC-04 y TC-05). Los rojos son bugs de la app, no errores de la prueba; cada uno lleva su anotación con el bug.
+4. **Abre el informe:**
+   ```bash
+   npm run report
+   ```
+   La terminal muestra una dirección tipo `http://localhost:9323`. Ábrela en el navegador.
+   El comando **no termina**: se queda activo para servir el informe. Para cerrarlo, pulsa `Ctrl + C` en la terminal.
+
+**Si algo sale mal:**
+
+| Lo que ves | Qué hacer |
+|---|---|
+| `falta BB_EMAIL, revisa tu .env` | El `.env` no está completo. Revisa los dos valores. |
+| Errores de login o `401` | El sandbox ha caducado o está mal copiado. Crea uno nuevo y actualiza el `.env`. |
+| Aviso "La limpieza no dejó el saldo como estaba" en el informe | El sandbox ha quedado descuadrado. Crea uno nuevo antes de volver a ejecutar. |
+| `Executable doesn't exist` o falta Chromium | Ejecuta `npm run install:browsers` y repite. |
+| `localhost:9323` no carga | Hay otro informe abierto. Pulsa `Ctrl + C` en la terminal y vuelve a ejecutar `npm run report`. |
+
+Para entender cada prueba paso a paso, lee [`docs/CASOS_CORE.md`](docs/CASOS_CORE.md).
 
 ## Ejecutar
 
