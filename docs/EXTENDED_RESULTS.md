@@ -91,7 +91,7 @@ Leídas una a una, buscando las que podrían pasar sin comprobar nada:
 ### La limpieza también caía en BUG-24
 
 La limpieza devolvía el dinero con una sola transferencia. Si la diferencia era un importe entero ≥ 500 (como tras TC-04, que deja la cuenta en -6.500 y necesita 13.000), esa transferencia **se duplicaba** y el saldo no volvía a su sitio (la comprobación lo detectaba y avisaba).
-Ahora esos importes se parten en `importe - 0.01` y `0.01`, que llevan decimales y no disparan el bug. Pendiente de comprobar con una ejecución.
+Ahora esos importes se parten en `importe - 0.01` y `0.01`, que llevan decimales y no disparan el bug. Comprobado en la ejecución de 70 pruebas: no salió ningún aviso de limpieza.
 
 ## Ejecución completa (70 pruebas, sandbox nuevo, 1 worker, 14,5 min)
 

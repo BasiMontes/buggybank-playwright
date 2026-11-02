@@ -57,7 +57,7 @@ Otras decisiones:
 - **TC-01 no comprueba `direction`**, porque está roto en todas las transferencias (BUG-09). Si lo comprobara, un bug de Movimientos taparía el resultado real de la transferencia.
 - **Un solo worker:** todas las pruebas usan las mismas dos cuentas; en paralelo se pisarían los saldos.
 - **Limpieza que se comprueba:** al terminar, cada prueba devuelve CHECKING a su saldo inicial y **verifica** que lo ha conseguido. Si no, el informe muestra un aviso para crear un sandbox nuevo.
-- **Esperas explícitas:** las 5 pruebas de la entrega no usan esperas fijas (`waitForTimeout`). Las tres que quedan en la suite sin revisar (TR-12, TR-16 y PG-06) son márgenes para comprobar que algo *no* ocurre; están en la lista de revisión.
+- **Esperas explícitas:** las 5 pruebas de la entrega no usan esperas fijas (`waitForTimeout`). En la suite extendida quedan tres márgenes de 2 s (TR-12, TR-16 y PG-06) para comprobar que algo *no* ocurre; están anotados en [`docs/EXTENDED_RESULTS.md`](docs/EXTENDED_RESULTS.md).
 
 ## Requisitos e instalación
 
@@ -90,9 +90,9 @@ npm run install:browsers
 | `npm run install:browsers` | Descarga Chromium (solo la primera vez) |
 | `npm run test:core` | **La entrega:** las 5 pruebas `@core` de Transferencias |
 | `npm run test:headed` | Las mismas 5, con el navegador visible |
-| `npm run test:extended` | La suite extendida por interfaz (`@extended`), sin revisar |
-| `npm run test:api` | Las pruebas directas de API (`@api`), sin revisar |
-| `npm test` | Todo junto: las 5 de la entrega y las 61 sin revisar (66) |
+| `npm run test:extended` | La suite extendida por interfaz (`@extended`): no es la entrega, ver [`docs/EXTENDED_RESULTS.md`](docs/EXTENDED_RESULTS.md) |
+| `npm run test:api` | Las pruebas directas de API (`@api`): no es la entrega |
+| `npm test` | Todo junto: las 70 pruebas (5 de la entrega y 65 de extendida y API) |
 | `npm run test:ui` | El modo interactivo de Playwright |
 | `npm run report` | Abre el informe HTML de la última ejecución |
 | `npm run typecheck` | Comprueba los tipos sin ejecutar nada |
@@ -131,7 +131,7 @@ He trabajado con Claude (Anthropic). Esto es lo que hizo cada parte:
 
 ## Pendiente
 
-- **La suite extendida (`tests/extended`, `tests/api`, 61 pruebas) está ejecutada y clasificada, pero no revisada del todo.** La generó la IA; en la ejecución del 28/10 salieron 37 en verde y 24 en rojo, y cada rojo está explicado en [`docs/EXTENDED_RESULTS.md`](docs/EXTENDED_RESULTS.md) (17 bugs de la app, 2 preguntas abiertas y 5 fallos de la prueba, ya corregidos; PG-06 es intermitente y está explicada ahí). Falta repasar las que salen en verde. La entrega son solo las 5 pruebas `@core`.
+- **La suite extendida y de API (65 pruebas) la generó la IA y la he ejecutado y clasificado.** En la ejecución completa del 28/10 (70 pruebas) salieron 44 en verde y 26 en rojo. Los rojos están explicados en [`docs/EXTENDED_RESULTS.md`](docs/EXTENDED_RESULTS.md): bugs de la app, dos preguntas abiertas y cinco fallos de mis propias pruebas, ya corregidos. Las 44 verdes se revisaron una a una; seis de ellas solo comprueban la pantalla y no el backend (PG-02, PG-03, TR-06, TR-10, TR-11 y PF-02), y así está anotado.
 - Ejecutar la suite en GitHub Actions con las credenciales como *secrets* (hoy no es práctico: el sandbox caduca cada 24 horas).
 
 ## Para comentar en la charla

@@ -9,6 +9,8 @@ node_modules/
 # Resultados de Playwright (se regeneran en cada ejecución)
 test-results/
 playwright-report/
+report-*/
+results-*.json
 blob-report/
 playwright/.cache/
 .auth/
