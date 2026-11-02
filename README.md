@@ -91,19 +91,34 @@ Un sandbox es un usuario temporal de BuggyBank con dos cuentas (CHECKING y SAVIN
 1. Entra en <https://buggybank-seven.vercel.app/login>.
 2. Escribe el **código del curso** en el campo *Código del curso* y pulsa **Crear usuario temporal**.
 3. La app te muestra un **email** y una **contraseña**. Cópialos.
-4. En la terminal, crea tu archivo de configuración (solo la primera vez):
+4. En la terminal, **dentro de la carpeta del proyecto** (la que contiene `package.json`), comprueba si ya existe el archivo `.env`:
 
    ```bash
-   cp .env.example .env
+   ls -la .env
    ```
 
-5. Ábrelo y pega el email y la contraseña en `BB_EMAIL=` y `BB_PASSWORD=`:
+   - **Si sale una línea con `.env`**, el archivo ya existe. **No lo crees otra vez**: ve directamente al paso 5 y sustituye los valores.
+   - **Si sale `No such file or directory`**, créalo copiando la plantilla:
+
+     ```bash
+     cp .env.example .env
+     ```
+
+     > ⚠️ `cp` sobrescribe el `.env` sin preguntar. No lo ejecutes si ya tienes un `.env` con credenciales.
+
+5. Abre el `.env` para pegar el **email** y la **contraseña** del sandbox que acabas de crear:
 
    ```bash
    open -e .env
    ```
 
-   No cambies `BB_BASE_URL`. El resto del archivo son comentarios.
+   Se abre en TextEdit. Pega los valores en `BB_EMAIL=` y `BB_PASSWORD=`, sin espacios ni comillas. **No cambies `BB_BASE_URL`**. Guarda con `Cmd + S`.
+
+6. Comprueba que la contraseña ha quedado guardada. Debe salir `1`:
+
+   ```bash
+   grep -c '^BB_PASSWORD=.' .env
+   ```
 
 > ⚠️ El `.env` está en `.gitignore` y **nunca se sube** al repositorio. Cuando el sandbox caduque, crea otro y actualiza solo esos dos valores.
 
@@ -115,7 +130,10 @@ Estos son los pasos para las 5 pruebas de la entrega. Hazlo siempre con un sandb
    ```bash
    cd ruta/a/buggybank-playwright
    ```
-2. **Comprueba que el `.env` tiene tu sandbox de hoy** (`BB_EMAIL` y `BB_PASSWORD` rellenos).
+2. **Comprueba que el `.env` tiene tu sandbox de hoy.** Debe salir `1`:
+   ```bash
+   grep -c '^BB_PASSWORD=.' .env
+   ```
 3. **Ejecuta las pruebas** (tardan unos 1,5 minutos):
    ```bash
    npm run test:core
