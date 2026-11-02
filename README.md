@@ -65,14 +65,24 @@ Otras decisiones:
 - **Node.js 18 o superior** (`node --version`). Si no lo tienes, instálalo desde <https://nodejs.org>.
 - Un **sandbox de BuggyBank** activo (dura 24 horas, ver más abajo).
 
-Solo la primera vez, en la terminal, dentro de la carpeta del proyecto:
+Solo la primera vez. Pega este bloque entero en la terminal. Comprueba si el proyecto ya existe antes de clonarlo, para no tener dos copias:
 
 ```bash
-git clone https://github.com/BasiMontes/buggybank-playwright.git
-cd buggybank-playwright
+if [ -f package.json ] && grep -q '"name": "buggybank-playwright"' package.json; then
+  echo "Ya estás dentro del proyecto: no lo clono otra vez."
+elif [ -d buggybank-playwright ]; then
+  cd buggybank-playwright
+  echo "El proyecto ya existe aquí: entro en su carpeta, no lo clono otra vez."
+else
+  git clone https://github.com/BasiMontes/buggybank-playwright.git
+  cd buggybank-playwright
+  echo "Proyecto clonado."
+fi
 npm install
 npm run install:browsers
 ```
+
+> ⚠️ Si ya tienes la carpeta del proyecto, **no la clones dentro de sí misma**. Trabaja siempre en la carpeta que contiene `package.json` y el `.env`. Si ves una carpeta `buggybank-playwright` dentro de otra `buggybank-playwright`, borra la interior después de copiar su `.env` si lo necesitas.
 
 ## Preparar el sandbox (cada 24 horas)
 
@@ -101,9 +111,9 @@ Un sandbox es un usuario temporal de BuggyBank con dos cuentas (CHECKING y SAVIN
 
 Estos son los pasos para las 5 pruebas de la entrega. Hazlo siempre con un sandbox recién creado.
 
-1. **Abre la terminal** y ve a la carpeta del proyecto:
+1. **Abre la terminal** y ve a la carpeta del proyecto (la que contiene `package.json`):
    ```bash
-   cd ~/Desktop/QA/"Upgrade QA"/FreeRangeTester/BuggyBank/buggybank-playwright
+   cd ruta/a/buggybank-playwright
    ```
 2. **Comprueba que el `.env` tiene tu sandbox de hoy** (`BB_EMAIL` y `BB_PASSWORD` rellenos).
 3. **Ejecuta las pruebas** (tardan unos 1,5 minutos):
