@@ -187,6 +187,10 @@ Una prueba concreta: `npx playwright test -g "TC-04"`.
 
 _Captura del informe tomada con el propio Playwright._
 
+Resto de la suite, ejecutada con `npm run test:sin-core` el 02/11/2026 (65 pruebas, sandbox nuevo): 41 en verde y 24 en rojo. Todos los rojos corresponden a bugs documentados o a preguntas abiertas, explicados en [`docs/EXTENDED_RESULTS.md`](docs/EXTENDED_RESULTS.md).
+
+![Informe de Playwright del 02/11/2026 (resto de la suite): 65 pruebas, 41 en verde y 24 en rojo](docs/reporte-resto-02-11.png)
+
 ## Uso de IA
 
 He trabajado con Claude (Anthropic). Esto es lo que hizo cada parte:
