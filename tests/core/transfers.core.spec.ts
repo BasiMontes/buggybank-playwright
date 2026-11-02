@@ -2,6 +2,7 @@
  * transfers.core.spec.ts — LA ENTREGA DEL DESAFÍO: 5 pruebas de Transferencias.
  *
  * Ejecuta solo estas con:  npm run test:core
+ * Explicación en lenguaje llano, paso a paso: docs/CASOS_CORE.md
  *
  * ┌───────┬──────────────────────────────┬────────────────────────────┬──────────────────┐
  * │ ID    │ Caso                         │ Riesgo que cubre           │ Resultado previsto│
@@ -9,7 +10,7 @@
  * │ TC-01 │ Transferencia válida         │ Dinero perdido o creado    │ Verde            │
  * │ TC-02 │ Monto negativo               │ Transferencia invertida    │ Verde (UI)       │
  * │ TC-03 │ Fondos insuficientes         │ Sobregiro                  │ ROJO → BUG-01    │
- * │ TC-04 │ Borde: saldo exacto          │ Límite > vs >=             │ Verde            │
+ * │ TC-04 │ Borde: saldo exacto          │ Límite > vs >=             │ ROJO → BUG-24    │
  * │ TC-05 │ Borde: doble submit          │ Cobro duplicado            │ ROJO → BUG-02    │
  * └───────┴──────────────────────────────┴────────────────────────────┴──────────────────┘
  *

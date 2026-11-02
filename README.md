@@ -10,6 +10,7 @@ Mi entrega del **Desafío BuggyBank** de Free Range Testers: pruebas automatizad
 | **Hallazgo propio** | BUG-24: las transferencias de importe entero ≥ 500 se aplican dos veces |
 | **Bugs documentados** | 24, en [`docs/BUGS.md`](docs/BUGS.md) |
 | **Plan de pruebas** | [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md) |
+| **Las 5 pruebas, explicadas** | [`docs/CASOS_CORE.md`](docs/CASOS_CORE.md), paso a paso y sin saber programar |
 
 ---
 
