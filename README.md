@@ -167,6 +167,7 @@ Para entender cada prueba paso a paso, lee [`docs/CASOS_CORE.md`](docs/CASOS_COR
 | `npm run test:headed` | Las mismas 5, con el navegador visible |
 | `npm run test:extended` | La suite extendida por interfaz (`@extended`): no es la entrega, ver [`docs/EXTENDED_RESULTS.md`](docs/EXTENDED_RESULTS.md) |
 | `npm run test:api` | Las pruebas directas de API (`@api`): no es la entrega |
+| `npm run test:sin-core` | Las 65 pruebas que **no** son la entrega (todo menos `@core`). Es el comando para repetir la clasificación de `docs/EXTENDED_RESULTS.md` |
 | `npm test` | Todo junto: las 70 pruebas (5 de la entrega y 65 de extendida y API) |
 | `npm run test:ui` | El modo interactivo de Playwright |
 | `npm run report` | Abre el informe HTML de la última ejecución |

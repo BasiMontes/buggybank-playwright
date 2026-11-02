@@ -6,6 +6,7 @@
   "scripts": {
     "test": "playwright test",
     "test:core": "playwright test --grep @core",
+    "test:sin-core": "playwright test --grep-invert @core",
     "test:extended": "playwright test --grep @extended",
     "test:api": "playwright test --grep @api",
     "test:headed": "playwright test --grep @core --headed",
