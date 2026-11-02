@@ -122,6 +122,8 @@ Un sandbox es un usuario temporal de BuggyBank con dos cuentas (CHECKING y SAVIN
 
 > ⚠️ El `.env` está en `.gitignore` y **nunca se sube** al repositorio. Cuando el sandbox caduque, crea otro y actualiza solo esos dos valores.
 
+> ℹ️ **No hace falta borrar nada a mano.** Cada comando de `npm run test…` borra antes la carpeta `test-results` (hay un script `clean` que lo hace), así que cada ejecución empieza sin restos de la anterior.
+
 ## Cómo ejecutar la entrega (`@core`), paso a paso
 
 Estos son los pasos para las 5 pruebas de la entrega. Hazlo siempre con un sandbox recién creado.

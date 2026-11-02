@@ -113,3 +113,25 @@ Ahora esos importes se parten en `importe - 0.01` y `0.01`, que llevan decimales
 
 - 19 de los 24 rojos son la app, no las pruebas. Eso valida la suite como detector, pero no su calidad: hay que mirar las **37 en verde** por si alguna pasa sin comprobar nada (TR-12, TR-14 y TR-13 son las candidatas).
 - Las pruebas dependen del estado que dejan otras (MV-06 vio datos de AP-01d): para la entrega no importa, pero conviene aislarlas.
+
+## Ejecución del 02/11/2026: `npm run test:sin-core` (65 pruebas, sandbox nuevo)
+
+**41 en verde y 24 en rojo.** Fuente: el informe HTML (`playwright-report/`), no la carpeta `test-results`.
+
+Incidencia: al principio conté 33 fallos porque había 8 carpetas vacías de una ejecución anterior. El informe las da por pasadas. Desde ahora `npm test` y los demás scripts borran `test-results` antes de ejecutar (ver `clean` en `package.json`).
+
+| Grupo | Rojos | Bug o estado |
+|---|---|---|
+| API (`@api`) | 8: AP-01a–f, AP-02, AP-04 | BUG-01, 04, 05, 06, 07, 22 y BUG-02 |
+| Pagos | 4: PG-02, PG-04, PG-06, PG-09 | BUG-18 (pregunta abierta), BUG-17, BUG-16 (intermitente), BUG-19 (pregunta abierta) |
+| Movimientos | 5: MV-02 a MV-06 | BUG-14, 11, 12, 13 y 15 |
+| Transferencias | 4: TR-09, TR-12, TR-17 (500 y 1.000) | BUG-07, BUG-03 y BUG-24 |
+| Perfil | 2: PF-02, PF-04 | BUG-20 y 21 |
+| Login | 1: LG-02 contraseña | BUG-23 |
+
+Todos los rojos corresponden a bugs documentados o preguntas abiertas. No hay ningún fallo sin explicar.
+
+- **TR-17 con 499 pasa:** no se duplica, como dice la documentación. Confirmado.
+- **DB-01, DB-02 y DB-03 pasan** (dashboard).
+- **LG-02 (email que no revela si existe) pasa.**
+- **PG-06 vuelve a fallar.** Ya ha fallado en dos ejecuciones, así que sigue siendo intermitente pero reproducible. Hay que medir con `--repeat-each` antes de clasificarlo como bug confirmado.

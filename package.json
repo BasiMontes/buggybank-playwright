@@ -4,15 +4,22 @@
   "private": true,
   "description": "Suite de pruebas automatizadas con Playwright + TypeScript contra BuggyBank (desafío Free Range Testers).",
   "scripts": {
+    "pretest": "npm run clean",
     "test": "playwright test",
+    "pretest:core": "npm run clean",
     "test:core": "playwright test --grep @core",
+    "pretest:sin-core": "npm run clean",
     "test:sin-core": "playwright test --grep-invert @core",
+    "pretest:extended": "npm run clean",
     "test:extended": "playwright test --grep @extended",
+    "pretest:api": "npm run clean",
     "test:api": "playwright test --grep @api",
+    "pretest:headed": "npm run clean",
     "test:headed": "playwright test --grep @core --headed",
     "test:ui": "playwright test --ui",
     "report": "playwright show-report",
     "typecheck": "tsc --noEmit",
+    "clean": "node -e \"require('fs').rmSync('test-results',{recursive:true,force:true})\"",
     "install:browsers": "playwright install chromium"
   },
   "keywords": [
