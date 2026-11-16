@@ -35,6 +35,58 @@ interface SandboxUser {
   message?: string;
 }
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Crea el sandbox, reintentando si BuggyBank falla de forma transitoria.
+ *
+ * ¿Por qué reintentar? En GitHub Actions la suite se reparte en 3 jobs que arrancan a la
+ * vez y piden su sandbox casi en el mismo segundo. El 16/11/2026 las tres peticiones
+ * recibieron HTTP 500 ("No se pudo crear el usuario temporal") y no se ejecutó ninguna
+ * prueba. Un error 5xx (o de red) es del servidor y puede ser pasajero: se reintenta.
+ * Un 4xx (por ejemplo, código del curso incorrecto) no se arregla reintentando: se corta.
+ *
+ * Esperas: un margen aleatorio de 0–8 s antes del primer intento (para que los 3 jobs no
+ * coincidan) y después 10, 30 y 60 s, cada una con hasta un 50 % aleatorio extra.
+ */
+async function createSandboxWithRetries(courseCode: string): Promise<Required<Pick<SandboxUser, 'email' | 'password'>>> {
+  const waits = [10_000, 30_000, 60_000];
+  if (process.env.CI) await sleep(Math.random() * 8_000);
+
+  for (let attempt = 1; ; attempt++) {
+    let status = 0;
+    let message = '';
+    try {
+      const response = await fetch(`${BASE_URL}/api/sandbox/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-bb-access-code': courseCode },
+        body: JSON.stringify({}),
+      });
+      status = response.status;
+      const body = (await response.json().catch(() => ({}))) as SandboxUser;
+      if (response.ok && body.email && body.password) return { email: body.email, password: body.password };
+      message = body.message ?? 'la respuesta no trae email y contraseña';
+    } catch (error) {
+      message = `error de red: ${(error as Error).message}`; // status queda en 0
+    }
+
+    // Nunca imprimimos el código del curso: solo el status y el mensaje de la app.
+    const retriable = status === 0 || status >= 500;
+    const wait = waits[attempt - 1];
+    if (!retriable || wait === undefined) {
+      throw new Error(
+        `No se pudo crear el sandbox de BuggyBank (HTTP ${status || 'sin respuesta'}): ${message}.\n` +
+          (retriable
+            ? `→ Falló ${attempt} veces seguidas: parece un problema de BuggyBank. Vuelve a lanzar la ejecución más tarde.`
+            : '→ Comprueba que el secreto BB_COURSE_CODE tiene el código del curso vigente.'),
+      );
+    }
+    const delay = Math.round(wait * (1 + Math.random() * 0.5));
+    console.log(`Intento ${attempt} de crear el sandbox falló (HTTP ${status || 'sin respuesta'}: ${message}). Reintento en ${Math.round(delay / 1000)} s.`);
+    await sleep(delay);
+  }
+}
+
 export default async function globalSetup(): Promise<void> {
   const email = process.env.BB_EMAIL?.trim();
   const password = process.env.BB_PASSWORD?.trim();
@@ -54,20 +106,7 @@ export default async function globalSetup(): Promise<void> {
   }
 
   // Caso 2: crear un sandbox nuevo.
-  const response = await fetch(`${BASE_URL}/api/sandbox/users`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-bb-access-code': courseCode },
-    body: JSON.stringify({}),
-  });
-  const body = (await response.json().catch(() => ({}))) as SandboxUser;
-
-  if (!response.ok || !body.email || !body.password) {
-    // Nunca imprimimos el código del curso: solo el status y el mensaje de la app.
-    throw new Error(
-      `No se pudo crear el sandbox de BuggyBank (HTTP ${response.status}): ${body.message ?? 'la respuesta no trae email y contraseña'}.\n` +
-        '→ Comprueba que el secreto BB_COURSE_CODE tiene el código del curso vigente.',
-    );
-  }
+  const body = await createSandboxWithRetries(courseCode);
 
   // En GitHub Actions, "::add-mask::" hace que el valor aparezca como *** en todos los logs
   // a partir de aquí (incluidos los mensajes de error de los tests).

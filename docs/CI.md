@@ -32,6 +32,7 @@ Ventajas que salen gratis:
 - **Cada ejecución arranca con datos limpios.** Ya no hace falta crear un sandbox a mano antes de la suite extendida (la advertencia sobre BUG-24 y los saldos descuadrados no aplica en CI).
 - **Las ejecuciones no se pisan**: dos ejecuciones a la vez usan sandboxes distintos. Esto es también lo que permite partir la suite en jobs paralelos (abajo).
 - **El email y la contraseña se ocultan en los logs** (`::add-mask::`): aparecen como `***`.
+- **Reintentos ante fallos de BuggyBank.** El 16/11/2026, la primera ejecución con 3 jobs recibió HTTP 500 ("No se pudo crear el usuario temporal") en las tres partes, y no se ejecutó ninguna prueba. Ahora, ante un 5xx o un error de red, se reintenta hasta 3 veces (tras unos 10, 30 y 60 s, con un margen aleatorio para que los jobs no coincidan). Un 4xx, como un código del curso incorrecto, no se reintenta.
 
 En local no cambia nada: si el `.env` tiene `BB_EMAIL` y `BB_PASSWORD`, se usan. Si los dejas vacíos y completas `BB_COURSE_CODE`, cada ejecución local también crea su propio sandbox.
 
