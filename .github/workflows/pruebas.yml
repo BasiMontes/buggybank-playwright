@@ -1,0 +1,114 @@
+# ------------------------------------------------------------------------------
+# Pruebas de BuggyBank en GitHub Actions
+#
+# Qué hace en cada ejecución:
+#   1. Instala dependencias y Chromium.
+#   2. Verifica los tipos (npm run typecheck).
+#   3. Crea un sandbox NUEVO de BuggyBank con el código del curso (secreto BB_COURSE_CODE)
+#      y ejecuta la suite contra él. Ver src/config/globalSetup.ts.
+#   4. Compara los resultados con ci/expected-results.json (los rojos conocidos) y
+#      escribe un resumen en la página de la ejecución. Ver scripts/ci-summary.mjs.
+#   5. Sube el informe HTML de Playwright como artefacto.
+#
+# El pipeline queda VERDE cuando los únicos rojos son los bugs conocidos, y ROJO cuando
+# cambia algo: aparece un fallo nuevo o un bug conocido deja de fallar (¿lo corrigieron?).
+# Las pruebas no se modifican para conseguir el verde: siguen en rojo en el informe.
+#
+# Configuración necesaria (una sola vez):
+#   Settings → Secrets and variables → Actions → New repository secret
+#   Nombre: BB_COURSE_CODE   Valor: el código del curso
+# ------------------------------------------------------------------------------
+name: Pruebas BuggyBank
+
+on:
+  # Cada cambio en main y cada pull request: ¿rompí algo?
+  push:
+    branches: [main]
+  pull_request:
+  # Todos los días: la app cambia aunque el repo no. Así se ve cuándo se corrige un bug
+  # o aparece uno nuevo. (06:17 UTC = 07:17 en Madrid en invierno.)
+  schedule:
+    - cron: '17 6 * * *'
+  # Botón "Run workflow" en la pestaña Actions, con opciones.
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: 'Qué pruebas ejecutar'
+        type: choice
+        options: [todas, core, sin-core]
+        default: todas
+      estricto:
+        description: 'Modo estricto: fallar ante cualquier rojo, aunque sea un bug conocido'
+        type: boolean
+        default: false
+
+# Mínimo privilegio: el workflow solo necesita leer el código.
+permissions:
+  contents: read
+
+# Si subes otro commit al mismo pull request, se cancela la ejecución anterior.
+# En main no se cancela nada: cada ejecución diaria queda completa en el historial.
+concurrency:
+  group: pruebas-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pruebas:
+    name: Suite Playwright
+    runs-on: ubuntu-latest
+    # La suite completa tarda unos 15 minutos con 1 worker; damos margen.
+    timeout-minutes: 40
+
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v7
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Verificar tipos
+        run: npm run typecheck
+
+      - name: Instalar Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Ejecutar pruebas
+        id: pruebas
+        # Las pruebas en rojo por bugs conocidos son esperables: no cortamos aquí.
+        # El paso siguiente decide si el pipeline falla.
+        continue-on-error: true
+        env:
+          BB_COURSE_CODE: ${{ secrets.BB_COURSE_CODE }}
+          # Las entradas del formulario se pasan como variables de entorno y no se
+          # pegan dentro del script: así no se pueden usar para inyectar comandos.
+          SUITE: ${{ inputs.suite || 'todas' }}
+        run: |
+          npm run clean
+          case "$SUITE" in
+            core)     npx playwright test --grep @core ;;
+            sin-core) npx playwright test --grep-invert @core ;;
+            *)        npx playwright test ;;
+          esac
+
+      - name: Comparar con los resultados esperados
+        if: ${{ !cancelled() }}
+        env:
+          ESTRICTO: ${{ inputs.estricto || 'false' }}
+        run: node scripts/ci-summary.mjs results-ci.json ci/expected-results.json
+
+      - name: Subir informe de Playwright
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report/
+          # Las trazas guardan el login del sandbox de esa ejecución. Es un sandbox
+          # desechable (caduca en 24 h), pero no hace falta guardarlo más de una semana.
+          retention-days: 7
+          if-no-files-found: ignore

@@ -11,6 +11,11 @@ export default defineConfig({
   // Dónde están los tests.
   testDir: './tests',
 
+  // Se ejecuta una vez antes de toda la suite. Si no hay credenciales pero sí código del
+  // curso (BB_COURSE_CODE), crea un sandbox nuevo. Es lo que permite correr en GitHub
+  // Actions sin renovar credenciales a mano cada 24 h. Ver src/config/globalSetup.ts.
+  globalSetup: './src/config/globalSetup.ts',
+
   // ¿Por qué NO en paralelo?
   // Todas las pruebas usan las MISMAS dos cuentas del sandbox. Si dos tests transfieren
   // dinero al mismo tiempo, la prueba A vería cambios de saldo hechos por la prueba B y
@@ -39,7 +44,11 @@ export default defineConfig({
   // - list: lo que ves en la terminal mientras corre.
   // - html: el reporte navegable con capturas, videos y traces (npm run report).
   //   open: 'never' para que no abra el navegador solo; lo abres cuando quieras.
-  reporter: [['list'], ['html', { open: 'never' }]],
+  // - json (solo en CI): resultados en un archivo que lee scripts/ci-summary.mjs para
+  //   comparar con los fallos conocidos (ci/expected-results.json).
+  reporter: process.env.CI
+    ? [['list'], ['html', { open: 'never' }], ['json', { outputFile: 'results-ci.json' }]]
+    : [['list'], ['html', { open: 'never' }]],
 
   use: {
     baseURL: BASE_URL,

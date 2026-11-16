@@ -1,5 +1,8 @@
 # BuggyBank · Suite de pruebas con Playwright
 
+[![Pruebas BuggyBank](https://github.com/BasiMontes/buggybank-playwright/actions/workflows/pruebas.yml/badge.svg)](https://github.com/BasiMontes/buggybank-playwright/actions/workflows/pruebas.yml)
+<sub>El distintivo indica si hay **cambios** respecto a los bugs conocidos, no que la app no tenga bugs. Ver [Integración continua](#integración-continua-github-actions).</sub>
+
 Mi entrega del **Desafío BuggyBank** de Free Range Testers: pruebas automatizadas contra [BuggyBank](https://buggybank-seven.vercel.app/login), un banco de práctica con bugs sembrados a propósito.
 
 | | |
@@ -179,6 +182,17 @@ Para entender cada prueba paso a paso, lee [`docs/CASOS_CORE.md`](docs/CASOS_COR
 
 Una prueba concreta: `npx playwright test -g "TC-04"`.
 
+## Integración continua (GitHub Actions)
+
+La suite completa se ejecuta sola en GitHub Actions con cada cambio en `main`, en cada pull request y **todos los días**. También se puede lanzar a mano desde **Actions → Pruebas BuggyBank → Run workflow**, eligiendo qué pruebas correr y si usar el modo estricto. El objetivo es volver a ejecutarla cuando se vayan corrigiendo los defectos y detectar si aparecen otros.
+
+Dos decisiones (detalle en [`docs/CI.md`](docs/CI.md)):
+
+- **Un sandbox nuevo por ejecución.** El workflow guarda solo el código del curso como secreto (`BB_COURSE_CODE`) y crea el sandbox al empezar, igual que el botón "Crear usuario temporal". Así no hay que renovar credenciales cada 24 horas, y cada ejecución arranca con datos limpios.
+- **El pipeline compara con los rojos conocidos.** Las pruebas no se tocan: los bugs siguen en rojo en el informe. [`ci/expected-results.json`](ci/expected-results.json) lista qué prueba falla por qué bug, y el pipeline solo se pone en rojo cuando **cambia** algo: aparece un fallo nuevo, o un bug conocido deja de fallar (¿lo corrigieron?).
+
+Cada ejecución deja un resumen en su página (verdes, rojos conocidos, cambios) y el informe HTML completo como artefacto.
+
 ## Evidencia
 
 `npm run report` abre el informe HTML. Para cada prueba fallida hay **captura**, **vídeo**, **traza** (DOM, red y consola paso a paso), **adjuntos JSON** con los saldos antes y después y las respuestas de la API, y una **anotación** con el bug.
@@ -201,6 +215,7 @@ He trabajado con Claude (Anthropic). Esto es lo que hizo cada parte:
 | **Diseño** | Propuso el plan de casos, los riesgos y las decisiones principales (saldos relativos, nota única, doble comprobación). | Elegí el flujo y la herramienta, y cambié el segundo caso límite a doble envío. |
 | **Código** | Escribió la suite completa, comentada. | La ejecuté por primera vez el 28/10 y revisé cada fallo en las trazas. |
 | **Revisión (28/10)** | Me ayudó a leer las trazas y a proponer cambios. | Decidí qué cambiar y qué no (abajo). |
+| **GitHub Actions (16/11)** | Escribió el workflow, la creación automática del sandbox, la lista de rojos conocidos y el script que compara. Los probó contra un servidor falso y validó el workflow con `actionlint`. | _Pendiente de completar tras revisar el PR y ver la primera ejecución real._ |
 
 **Lo que cambié tras ejecutarla:**
 
@@ -214,7 +229,8 @@ He trabajado con Claude (Anthropic). Esto es lo que hizo cada parte:
 ## Pendiente
 
 - **La suite extendida y de API (65 pruebas) la generó la IA y la he ejecutado y clasificado.** En la ejecución completa del 28/10 (70 pruebas) salieron 44 en verde y 26 en rojo. Los rojos están explicados en [`docs/EXTENDED_RESULTS.md`](docs/EXTENDED_RESULTS.md): bugs de la app, dos preguntas abiertas y cinco fallos de mis propias pruebas, ya corregidos. Las 44 verdes se revisaron una a una; seis de ellas solo comprueban la pantalla y no el backend (PG-02, PG-03, TR-06, TR-10, TR-11 y PF-02), y así está anotado.
-- Ejecutar la suite en GitHub Actions con las credenciales como *secrets* (hoy no es práctico: el sandbox caduca cada 24 horas).
+- ~~Ejecutar la suite en GitHub Actions~~ Hecho: ver [Integración continua](#integración-continua-github-actions). El problema de los sandboxes de 24 horas se resolvió creando uno nuevo en cada ejecución.
+- PG-06 sigue siendo intermitente: está en la lista como `flaky`, así que no hace fallar el pipeline. La mejora pendiente (comparar las claves de idempotencia de las dos peticiones) lo volvería determinista.
 
 ## Para comentar en la charla
 
