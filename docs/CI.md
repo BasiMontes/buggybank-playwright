@@ -6,8 +6,8 @@ Archivos que intervienen:
 
 | Archivo | Qué hace |
 |---|---|
-| [`.github/workflows/pruebas.yml`](../.github/workflows/pruebas.yml) | El workflow: instala, verifica tipos, ejecuta, compara y sube el informe |
-| [`src/config/globalSetup.ts`](../src/config/globalSetup.ts) | Crea un sandbox nuevo de BuggyBank al empezar cada ejecución |
+| [`.github/workflows/pruebas.yml`](../.github/workflows/pruebas.yml) | El workflow: 3 jobs en paralelo que ejecutan un tercio de la suite cada uno, y un job final que fusiona, compara y sube el informe |
+| [`src/config/globalSetup.ts`](../src/config/globalSetup.ts) | Crea un sandbox nuevo de BuggyBank al empezar cada job |
 | [`ci/expected-results.json`](../ci/expected-results.json) | La lista de rojos conocidos: qué prueba falla y por qué bug |
 | [`scripts/ci-summary.mjs`](../scripts/ci-summary.mjs) | Compara los resultados con esa lista y decide si el pipeline pasa |
 
@@ -30,7 +30,7 @@ El endpoint se sacó del código público de la página de login: es lo que hace
 Ventajas que salen gratis:
 
 - **Cada ejecución arranca con datos limpios.** Ya no hace falta crear un sandbox a mano antes de la suite extendida (la advertencia sobre BUG-24 y los saldos descuadrados no aplica en CI).
-- **Las ejecuciones no se pisan**: dos ejecuciones a la vez usan sandboxes distintos.
+- **Las ejecuciones no se pisan**: dos ejecuciones a la vez usan sandboxes distintos. Esto es también lo que permite partir la suite en jobs paralelos (abajo).
 - **El email y la contraseña se ocultan en los logs** (`::add-mask::`): aparecen como `***`.
 
 En local no cambia nada: si el `.env` tiene `BB_EMAIL` y `BB_PASSWORD`, se usan. Si los dejas vacíos y completas `BB_COURSE_CODE`, cada ejecución local también crea su propio sandbox.
@@ -58,6 +58,24 @@ Cómo decide `ci-summary.mjs`:
 Así que un **pipeline verde no significa que la app no tenga bugs**. Significa "nada cambió respecto a lo que ya sabemos". El distintivo del README hay que leerlo así.
 
 Para ver el estado "crudo" (rojo con cualquier fallo), ejecuta el workflow a mano con la opción **Modo estricto**.
+
+## Problema 3: 14 minutos es mucho esperar
+
+Con un solo job, la suite tardaba unos 14 minutos. No se podía subir el número de workers: las pruebas comparten las dos cuentas del sandbox y en paralelo se pisarían los saldos.
+
+**Solución:** paralelizar **entre sandboxes**, no dentro de uno. El workflow lanza 3 jobs a la vez y cada uno crea su propio sandbox y ejecuta un tercio de la suite con `--shard=N/3`:
+
+```
+┌ Pruebas (parte 1 de 3) ┐
+├ Pruebas (parte 2 de 3) ┼──▶ Resumen: fusiona los informes, compara con los
+└ Pruebas (parte 3 de 3) ┘    rojos conocidos y sube un único informe HTML
+```
+
+- **`fullyParallel: true` en `playwright.config.ts`** hace que `--shard` reparta prueba por prueba (24 + 23 + 23) y no archivo por archivo. No ejecuta nada en paralelo dentro de un job: sigue habiendo 1 worker. Es seguro porque ninguna prueba usa `beforeAll` ni depende de otra; la única variable compartida (`original`, en Perfil) se vuelve a leer en el `beforeEach` de cada prueba.
+- **Cada parte deja un reporte "blob"** y el job Resumen los fusiona con `npx playwright merge-reports`. El informe HTML y el resumen son uno solo, como antes.
+- **Red de seguridad:** el Resumen compara contra la lista completa de pruebas (`--list`). Si una parte se cae antes de dejar su reporte, sus pruebas aparecen como "No se ejecutaron" y el pipeline falla, en lugar de salir verde con 47 pruebas.
+
+Con los tiempos de la primera ejecución, las partes quedan en unos 3,7, 3,9 y 5,5 minutos de pruebas. La tercera es la más larga porque le tocan TR-17 y el resto de Transferencias extendidas. Sumando la instalación y el Resumen, el total baja de unos 16 a unos 8 minutos.
 
 ## Qué hacer cuando el pipeline se pone rojo
 
@@ -94,4 +112,6 @@ Casi siempre es el sandbox: falta el secreto `BB_COURSE_CODE`, el código cambi�
 
 ## Cuánto cuesta
 
-Unos 15–20 minutos de ejecución por vez. Un repo público tiene minutos de GitHub Actions gratis e ilimitados en los runners estándar. Con la ejecución diaria, BuggyBank recibe un sandbox nuevo al día (más uno por push o PR). Si al profe le parece mucho, se cambia el `cron` del workflow (por ejemplo, a semanal: `'17 6 * * 1'`).
+Unos 8 minutos de espera por ejecución, que consumen unos 20 minutos de máquina en total (3 jobs a la vez más el Resumen). Un repo público tiene minutos de GitHub Actions gratis e ilimitados en los runners estándar.
+
+Cada ejecución crea **3 sandboxes** en BuggyBank, uno por parte. Con la ejecución diaria son 3 al día, más 3 por cada push o PR. Si al profe le parece mucho, hay dos palancas: cambiar el `cron` (por ejemplo, a semanal: `'17 6 * * 1'`) o bajar las partes a 2 (en `matrix.parte` del workflow).

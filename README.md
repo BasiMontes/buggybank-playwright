@@ -186,10 +186,12 @@ Una prueba concreta: `npx playwright test -g "TC-04"`.
 
 La suite completa se ejecuta sola en GitHub Actions con cada cambio en `main`, en cada pull request y **todos los días**. También se puede lanzar a mano desde **Actions → Pruebas BuggyBank → Run workflow**, eligiendo qué pruebas correr y si usar el modo estricto. El objetivo es volver a ejecutarla cuando se vayan corrigiendo los defectos y detectar si aparecen otros.
 
-Dos decisiones (detalle en [`docs/CI.md`](docs/CI.md)):
+Tres decisiones (detalle en [`docs/CI.md`](docs/CI.md)):
 
 - **Un sandbox nuevo por ejecución.** El workflow guarda solo el código del curso como secreto (`BB_COURSE_CODE`) y crea el sandbox al empezar, igual que el botón "Crear usuario temporal". Así no hay que renovar credenciales cada 24 horas, y cada ejecución arranca con datos limpios.
 - **El pipeline compara con los rojos conocidos.** Las pruebas no se tocan: los bugs siguen en rojo en el informe. [`ci/expected-results.json`](ci/expected-results.json) lista qué prueba falla por qué bug, y el pipeline solo se pone en rojo cuando **cambia** algo: aparece un fallo nuevo, o un bug conocido deja de fallar (¿lo corrigieron?).
+
+- **Tres jobs en paralelo, cada uno con su sandbox.** La suite se reparte en tres partes de 23–24 pruebas que corren a la vez; un job final fusiona los resultados. Así la ejecución pasa de unos 16 a unos 8 minutos sin que los saldos se pisen.
 
 Cada ejecución deja un resumen en su página (verdes, rojos conocidos, cambios) y el informe HTML completo como artefacto.
 

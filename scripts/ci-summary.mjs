@@ -1,7 +1,8 @@
 /**
  * ci-summary.mjs — Compara los resultados de Playwright con los resultados esperados.
  *
- * Uso:  node scripts/ci-summary.mjs <results-ci.json> <ci/expected-results.json>
+ * Uso:  node scripts/ci-summary.mjs <results-ci.json> <ci/expected-results.json> [list-ci.json]
+ *       (list-ci.json, opcional: la lista completa de pruebas, para detectar las que no se ejecutaron)
  *
  * EL PROBLEMA:
  * BuggyBank tiene bugs a propósito, así que la suite SIEMPRE tiene pruebas en rojo.
@@ -28,7 +29,7 @@
  */
 import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 
-const [resultsPath = 'results-ci.json', expectedPath = 'ci/expected-results.json'] = process.argv.slice(2);
+const [resultsPath = 'results-ci.json', expectedPath = 'ci/expected-results.json', listPath] = process.argv.slice(2);
 const strict = process.env.ESTRICTO === 'true';
 
 /** Escribe en el resumen de GitHub (si existe) y en la consola. */
@@ -78,6 +79,23 @@ function collect(suite, out = []) {
 const results = (report.suites ?? []).flatMap((s) => collect(s));
 const errors = report.errors ?? []; // errores fuera de las pruebas (p. ej. en globalSetup)
 
+/**
+ * Pruebas que deberían haberse ejecutado y no aparecen en los resultados.
+ * La suite se reparte en 3 jobs: si uno se cae antes de dejar su reporte (falla `npm ci`,
+ * se cae la máquina...), el informe fusionado tendría menos pruebas y, sin este chequeo,
+ * el pipeline podría salir verde sin haberlas ejecutado. `listPath` es la salida de
+ * `npx playwright test --list --reporter=json` con el mismo filtro que la ejecución.
+ */
+const key = (r) => `${r.file} › ${r.title}`;
+const missing = [];
+if (listPath && existsSync(listPath)) {
+  const ranKeys = new Set(results.map(key));
+  const list = JSON.parse(readFileSync(listPath, 'utf8'));
+  for (const t of (list.suites ?? []).flatMap((s) => collect(s))) {
+    if (!ranKeys.has(key(t))) missing.push(t);
+  }
+}
+
 // ── 2. Clasificar ────────────────────────────────────────────────────────────────
 const groups = { newFailures: [], fixed: [], known: [], flaky: [], passed: [], skipped: [] };
 for (const r of results) {
@@ -94,7 +112,7 @@ const notRun = expected.tests.filter((t) => !ran.has(t.title));
 const failedTotal = results.filter((r) => r.status === 'failed').length;
 
 // ── 3. Decidir el estado del pipeline ─────────────────────────────────────────────
-const alarms = groups.newFailures.length + groups.fixed.length + errors.length;
+const alarms = groups.newFailures.length + groups.fixed.length + errors.length + missing.length;
 const pipelineFails = alarms > 0 || (strict && failedTotal > 0) || results.length === 0;
 
 // ── 4. Resumen ───────────────────────────────────────────────────────────────────
@@ -116,7 +134,17 @@ summary(`| 🔁 Intermitentes | ${groups.flaky.length} |`);
 summary(`| 🚨 Fallos nuevos | ${groups.newFailures.length} |`);
 summary(`| 🎉 Bugs conocidos que ahora pasan | ${groups.fixed.length} |`);
 if (groups.skipped.length) summary(`| ⏭️ Omitidas | ${groups.skipped.length} |`);
+if (missing.length) summary(`| ❓ No se ejecutaron | ${missing.length} |`);
 summary('');
+
+if (missing.length) {
+  summary('### ❓ Pruebas que no se ejecutaron');
+  summary('Deberían estar en el informe y no están. Lo más probable es que uno de los jobs paralelos se haya caído antes de terminar: revisa los jobs "Pruebas (parte N de 3)".');
+  summary('');
+  for (const t of missing) summary(`- ${t.title} (\`${t.file}\`)`);
+  annotation('error', 'Pruebas sin ejecutar', `${missing.length} prueba(s) no aparecen en el informe`);
+  summary('');
+}
 
 if (errors.length) {
   summary('### ❌ Errores fuera de las pruebas');

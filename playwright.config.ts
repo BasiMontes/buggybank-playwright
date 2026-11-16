@@ -21,8 +21,15 @@ export default defineConfig({
   // dinero al mismo tiempo, la prueba A vería cambios de saldo hechos por la prueba B y
   // fallaría sin que haya un bug real (falso positivo). Con 1 worker, los tests corren
   // uno después del otro y cada uno puede razonar sobre "saldo antes / saldo después".
-  fullyParallel: false,
   workers: 1,
+
+  // fullyParallel: true NO ejecuta nada en paralelo (sigue habiendo 1 worker). Solo le dice
+  // a Playwright que cada prueba es independiente de las demás de su archivo, así que
+  // `--shard` puede repartir prueba por prueba y no archivo por archivo. GitHub Actions usa
+  // eso para dividir la suite en 3 jobs, cada uno con SU PROPIO sandbox: ahí sí hay
+  // paralelismo, pero entre sandboxes distintos, así que los saldos no se pisan.
+  // Es seguro porque ninguna prueba usa beforeAll ni depende de otra (ver docs/CI.md).
+  fullyParallel: true,
 
   // Sin reintentos: si una prueba falla por un bug, queremos verla roja la primera vez.
   // Un reintento podría ocultar bugs intermitentes (por ejemplo, condiciones de carrera
@@ -44,11 +51,10 @@ export default defineConfig({
   // - list: lo que ves en la terminal mientras corre.
   // - html: el reporte navegable con capturas, videos y traces (npm run report).
   //   open: 'never' para que no abra el navegador solo; lo abres cuando quieras.
-  // - json (solo en CI): resultados en un archivo que lee scripts/ci-summary.mjs para
-  //   comparar con los fallos conocidos (ci/expected-results.json).
-  reporter: process.env.CI
-    ? [['list'], ['html', { open: 'never' }], ['json', { outputFile: 'results-ci.json' }]]
-    : [['list'], ['html', { open: 'never' }]],
+  // - blob (solo en CI): cada uno de los 3 jobs deja un reporte "en crudo". Un job final
+  //   los fusiona (npx playwright merge-reports) en un único informe HTML y un JSON que lee
+  //   scripts/ci-summary.mjs para comparar con los fallos conocidos (ci/expected-results.json).
+  reporter: process.env.CI ? [['list'], ['blob']] : [['list'], ['html', { open: 'never' }]],
 
   use: {
     baseURL: BASE_URL,
