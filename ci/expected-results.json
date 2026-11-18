@@ -1,0 +1,44 @@
+{
+  "$comment": [
+    "Resultados esperados de la suite: qué pruebas sabemos que hoy quedan en rojo y por qué.",
+    "Lo lee scripts/ci-summary.mjs en GitHub Actions para separar lo conocido de lo nuevo.",
+    "kind: 'bug' = bug confirmado de la app · 'question' = pregunta abierta (no sabemos si es bug) · 'flaky' = intermitente, verde o rojo son ambos esperables.",
+    "Cuando un bug se corrige, la prueba pasa a verde y el pipeline avisa: verifica a mano, borra la entrada de aquí y actualiza docs/BUGS.md.",
+    "Fuente: ejecución completa del 02/11/2026 (docs/EXTENDED_RESULTS.md) + entrega @core."
+  ],
+  "tests": [
+    { "title": "TC-03 · transferir un centavo más que el saldo se rechaza sin mover dinero", "bug": "BUG-01", "kind": "bug" },
+    { "title": "TC-04 · transferir exactamente el saldo disponible se acepta y deja la cuenta en 0.00", "bug": "BUG-24", "kind": "bug" },
+    { "title": "TC-05 · dos envíos simultáneos de la misma transferencia generan un solo movimiento", "bug": "BUG-02", "kind": "bug" },
+
+    { "title": "AP-01a · la API rechaza una transferencia con monto negativo (4xx y sin efectos)", "bug": "BUG-04", "kind": "bug" },
+    { "title": "AP-01b · la API rechaza una transferencia con monto cero (4xx y sin efectos)", "bug": "BUG-05", "kind": "bug" },
+    { "title": "AP-01c · la API rechaza una transferencia con origen igual a destino (4xx y sin efectos)", "bug": "BUG-06", "kind": "bug" },
+    { "title": "AP-01d · la API rechaza una transferencia con monto con 3 decimales (4xx y sin efectos)", "bug": "BUG-07", "kind": "bug" },
+    { "title": "AP-01e · la API rechaza una transferencia con monto mayor al saldo (4xx y sin efectos)", "bug": "BUG-01", "kind": "bug" },
+    { "title": "AP-01f · la API rechaza una transferencia con monto no numérico (4xx y sin efectos)", "bug": "BUG-22", "kind": "bug" },
+    { "title": "AP-02 · todos los errores son 4xx con un JSON que incluye \"message\"", "bug": "BUG-22", "kind": "bug" },
+    { "title": "AP-04 · dos POST idénticos en paralelo generan una sola transferencia", "bug": "BUG-02", "kind": "bug" },
+
+    { "title": "TR-09 · un monto con 3 decimales se rechaza o se redondea igual en débito y crédito", "bug": "BUG-07", "kind": "bug" },
+    { "title": "TR-12 · si el botón Transferir se ve deshabilitado, no debe ejecutar la transferencia", "bug": "BUG-03", "kind": "bug" },
+    { "title": "TR-17 · una transferencia de 500 mueve exactamente 500 (BUG-24: se duplica)", "bug": "BUG-24", "kind": "bug" },
+    { "title": "TR-17 · una transferencia de 1000 mueve exactamente 1000 (BUG-24: se duplica)", "bug": "BUG-24", "kind": "bug" },
+
+    { "title": "MV-02 · todas las fechas del historial usan el mismo formato", "bug": "BUG-14", "kind": "bug" },
+    { "title": "MV-03 · el filtro \"Entrantes\" solo muestra ingresos y \"Salientes\" solo salidas", "bug": "BUG-11", "kind": "bug" },
+    { "title": "MV-04 · combinar dirección y búsqueda devuelve solo filas que cumplen ambos filtros", "bug": "BUG-12", "kind": "bug" },
+    { "title": "MV-05 · búsquedas equivalentes (mayúsculas, espacios) devuelven el mismo resultado", "bug": "BUG-13", "kind": "bug" },
+    { "title": "MV-06 · la tabla coincide con la API en montos y deja ver el estado de cada movimiento", "bug": "BUG-15", "kind": "bug" },
+
+    { "title": "PG-04 · no se puede programar un pago con fecha pasada", "bug": "BUG-17", "kind": "bug" },
+    { "title": "PG-02 · un pago mayor al saldo disponible no se programa", "bug": "BUG-18", "kind": "question" },
+    { "title": "PG-09 · completar un pago debita la cuenta origen y revertirlo devuelve el dinero", "bug": "BUG-19", "kind": "question" },
+    { "title": "PG-06 · dos clics simultáneos en \"Procesar\" avanzan un solo estado", "bug": "BUG-16", "kind": "flaky" },
+
+    { "title": "PF-02 · la API aplica las mismas reglas que la interfaz (nombre corto, teléfono excesivo)", "bug": "BUG-20", "kind": "bug" },
+    { "title": "PF-04 · un email inválido se rechaza con error, no se ignora en silencio", "bug": "BUG-21", "kind": "bug" },
+
+    { "title": "LG-02 · una contraseña incorrecta muestra un mensaje en el idioma de la app", "bug": "BUG-23", "kind": "bug" }
+  ]
+}
