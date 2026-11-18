@@ -3,6 +3,8 @@
 [![Pruebas BuggyBank](https://github.com/BasiMontes/buggybank-playwright/actions/workflows/pruebas.yml/badge.svg)](https://github.com/BasiMontes/buggybank-playwright/actions/workflows/pruebas.yml)
 <sub>El distintivo indica si hay **cambios** respecto a los bugs conocidos, no que la app no tenga bugs. Ver [Integración continua](#integración-continua-github-actions).</sub>
 
+📊 **[Informe HTML de la última ejecución](https://basimontes.github.io/buggybank-playwright/)**: el informe de Playwright con capturas, vídeos y trazas, en el navegador.
+
 Mi entrega del **Desafío BuggyBank** de Free Range Testers: pruebas automatizadas contra [BuggyBank](https://buggybank-seven.vercel.app/login), un banco de práctica con bugs sembrados a propósito.
 
 | | |
@@ -193,7 +195,7 @@ Tres decisiones (detalle en [`docs/CI.md`](docs/CI.md)):
 
 - **Tres jobs en paralelo, cada uno con su sandbox.** La suite se reparte en tres partes de 23–24 pruebas que corren a la vez; un job final fusiona los resultados. Así la ejecución pasa de unos 16 a unos 8 minutos sin que los saldos se pisen.
 
-Cada ejecución deja un resumen en su página (verdes, rojos conocidos, cambios) y el informe HTML completo como artefacto.
+Cada ejecución deja un resumen en su página (verdes, rojos conocidos, cambios). El informe HTML de Playwright de la última ejecución en `main` se publica en **[GitHub Pages](https://basimontes.github.io/buggybank-playwright/)**, para verlo directamente en el navegador. Además, cada ejecución, incluidas las de pull requests, lo deja como `.zip` descargable.
 
 ## Evidencia
 

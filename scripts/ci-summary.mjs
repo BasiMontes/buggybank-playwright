@@ -204,6 +204,6 @@ if (notRun.length && notRun.length < expected.tests.length) {
   summary('');
 }
 
-summary('El informe completo (capturas, vídeos, trazas y evidencia JSON) está en el artefacto **playwright-report** de esta ejecución.');
+summary('El informe completo (capturas, vídeos, trazas y evidencia JSON) está enlazado al final de este resumen.');
 
 process.exit(pipelineFails ? 1 : 0);

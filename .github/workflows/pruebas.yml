@@ -2,11 +2,16 @@
 # Pruebas de BuggyBank en GitHub Actions
 #
 # La suite se reparte en 3 jobs que corren A LA VEZ, cada uno con SU PROPIO sandbox
-# (así los saldos no se pisan). Después, un job final junta los resultados:
+# (así los saldos no se pisan). Después, un job junta los resultados y otro publica
+# el informe HTML en GitHub Pages:
 #
 #   ┌ Pruebas (parte 1 de 3) ┐
-#   ├ Pruebas (parte 2 de 3) ┼──▶ Resumen: fusiona los informes, compara con los
-#   └ Pruebas (parte 3 de 3) ┘    rojos conocidos y sube un único informe HTML
+#   ├ Pruebas (parte 2 de 3) ┼──▶ Resumen ──▶ Publicar informe (solo desde main)
+#   └ Pruebas (parte 3 de 3) ┘
+#
+#   Resumen: fusiona los informes, compara con los rojos conocidos y sube el informe
+#   HTML como artefacto. Publicar informe: lo deja en
+#   https://basimontes.github.io/buggybank-playwright/ para verlo en el navegador.
 #
 # Cada parte:
 #   1. Instala dependencias y Chromium.
@@ -171,7 +176,8 @@ jobs:
           ESTRICTO: ${{ inputs.estricto || 'false' }}
         run: node scripts/ci-summary.mjs results-ci.json ci/expected-results.json list-ci.json
 
-      - name: Subir informe de Playwright
+      - name: Subir informe de Playwright (artefacto descargable)
+        id: informe
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
@@ -181,3 +187,61 @@ jobs:
           # (caducan en 24 h), pero no hace falta guardarlos más de una semana.
           retention-days: 7
           if-no-files-found: ignore
+
+      - name: Preparar el informe para GitHub Pages
+        # Solo desde main: GitHub Pages publica una única versión del sitio, la última
+        # ejecución de main. Las ejecuciones de pull requests no lo pisan.
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: playwright-report/
+
+      - name: Enlazar el informe en el resumen
+        if: ${{ !cancelled() }}
+        env:
+          ARTEFACTO: ${{ steps.informe.outputs.artifact-url }}
+          EN_MAIN: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+          PAGES: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+        run: |
+          {
+            echo ""
+            echo "### 📊 Informe HTML de Playwright"
+            if [ "$EN_MAIN" = "true" ]; then
+              echo "- **Ver en el navegador:** <$PAGES> (se publica en el job \"Publicar informe\", un minuto después)"
+            else
+              echo "- En pull requests el informe no se publica en GitHub Pages: se publica al llegar a \`main\`."
+            fi
+            if [ -n "$ARTEFACTO" ]; then
+              echo "- **Descargar (.zip):** [playwright-report]($ARTEFACTO). Descomprímelo y abre \`index.html\`."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publicar:
+    name: Publicar informe
+    needs: resumen
+    # También cuando el resumen está en rojo: justo entonces es cuando más interesa
+    # ver el informe. Solo desde main (ver "Preparar el informe para GitHub Pages").
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Permisos mínimos para publicar en GitHub Pages, solo en este job.
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    # Dos publicaciones a la vez se pisarían: van en fila, sin cancelar ninguna.
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+
+    steps:
+      - name: Publicar en GitHub Pages
+        id: despliegue
+        uses: actions/deploy-pages@v5
+
+      - name: Enlazar el informe publicado
+        env:
+          URL: ${{ steps.despliegue.outputs.page_url }}
+        run: echo "### 📊 [Informe HTML de esta ejecución]($URL)" >> "$GITHUB_STEP_SUMMARY"

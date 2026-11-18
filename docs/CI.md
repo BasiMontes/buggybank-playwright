@@ -78,9 +78,25 @@ Con un solo job, la suite tardaba unos 14 minutos. No se podía subir el número
 
 Con los tiempos de la primera ejecución, las partes quedan en unos 3,7, 3,9 y 5,5 minutos de pruebas. La tercera es la más larga porque le tocan TR-17 y el resto de Transferencias extendidas. Sumando la instalación y el Resumen, el total baja de unos 16 a unos 8 minutos.
 
+## Problema 4: el informe HTML no se veía
+
+Al principio el informe de Playwright solo quedaba como artefacto: un `.zip` al pie de la página de la ejecución, que había que descargar, descomprimir y abrir a mano. El profe no lo encontró, con razón.
+
+**Solución:** un cuarto job, **Publicar informe**, lo publica en GitHub Pages:
+
+> **<https://basimontes.github.io/buggybank-playwright/>**
+
+- Se abre en el navegador, sin descargar nada, con las capturas, los vídeos y el **visor de trazas** funcionando (se probó sirviendo un informe desde la misma subcarpeta).
+- Muestra siempre **la última ejecución de `main`** (la diaria o la de un push). GitHub Pages guarda una sola versión del sitio, así que cada publicación reemplaza la anterior.
+- Se publica **también cuando el pipeline está en rojo**: justamente ahí es cuando más interesa mirarlo.
+- Las ejecuciones de pull requests **no** lo publican, para no pisar el informe de `main`. En ellas sigue el `.zip`.
+- El resumen de cada ejecución termina con los enlaces: el de Pages (en `main`) y el de descarga del `.zip`.
+
+Para activarlo hace falta un paso en la configuración del repo (ver [Configuración](#configuración-una-sola-vez)).
+
 ## Qué hacer cuando el pipeline se pone rojo
 
-Abre la ejecución en la pestaña **Actions**. El resumen dice qué cambió y el artefacto **playwright-report** tiene el informe completo (descárgalo, descomprímelo y abre `index.html`).
+Abre la ejecución en la pestaña **Actions**. El resumen dice qué cambió. El informe completo está en [GitHub Pages](https://basimontes.github.io/buggybank-playwright/) (ejecuciones de `main`) o en el enlace de descarga del final del resumen.
 
 **🎉 "Bugs conocidos que ahora pasan"**
 1. Comprueba el bug a mano en BuggyBank. Un verde aislado puede ser casualidad.
@@ -101,14 +117,15 @@ Casi siempre es el sandbox: falta el secreto `BB_COURSE_CODE`, el código cambi�
 
 1. En GitHub: **Settings → Secrets and variables → Actions → New repository secret**.
 2. Nombre: `BB_COURSE_CODE`. Valor: el código del curso.
-3. Pestaña **Actions → Pruebas BuggyBank → Run workflow** para la primera ejecución.
+3. **Settings → Pages → Build and deployment → Source: GitHub Actions**. Sin esto, el job "Publicar informe" falla y el informe solo queda como `.zip`.
+4. Pestaña **Actions → Pruebas BuggyBank → Run workflow** (rama `main`) para la primera ejecución.
 
 > Los pull requests que vengan de un **fork** no reciben secretos (GitHub lo hace así por seguridad), así que en ellos el workflow falla al crear el sandbox. Es esperable.
 
 ## Seguridad: qué queda expuesto y qué no
 
 - **El código del curso** solo vive en el secreto. No aparece en los logs ni en el informe: el sandbox se crea desde Node y no desde el navegador, así que tampoco queda en las trazas.
-- **El email y la contraseña del sandbox de esa ejecución** sí quedan dentro de las trazas del informe (la petición de login). El repo es público, así que cualquiera con cuenta de GitHub puede descargar el artefacto. Es un sandbox desechable que caduca en 24 horas y solo tiene datos de práctica. Aun así, el artefacto se borra a los 7 días.
+- **El email y la contraseña del sandbox de esa ejecución** sí quedan dentro de las trazas del informe (la petición de login). El informe publicado en GitHub Pages lo puede ver cualquiera, sin cuenta, y el `.zip` cualquiera con cuenta de GitHub. Se acepta porque son sandboxes desechables: caducan en 24 horas, solo tienen datos de práctica y cada ejecución crea los suyos. El `.zip` se borra a los 7 días, y el informe de Pages se reemplaza con cada ejecución de `main`.
 - El workflow tiene permisos de **solo lectura** sobre el repo.
 
 ## Cuánto cuesta
