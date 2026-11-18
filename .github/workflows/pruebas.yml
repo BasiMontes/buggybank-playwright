@@ -10,8 +10,10 @@
 #   └ Pruebas (parte 3 de 3) ┘
 #
 #   Resumen: fusiona los informes, compara con los rojos conocidos y sube el informe
-#   HTML como artefacto. Publicar informe: lo deja en
-#   https://basimontes.github.io/buggybank-playwright/ para verlo en el navegador.
+#   HTML como artefacto (30 días). Publicar informe: anota la ejecución en la rama
+#   `historial` (para siempre) y publica en https://basimontes.github.io/buggybank-playwright/
+#   el último informe, el historial y los informes de las últimas 15 ejecuciones.
+#   Ver docs/CI.md, "Problema 5".
 #
 # Cada parte:
 #   1. Instala dependencias y Chromium.
@@ -174,6 +176,8 @@ jobs:
       - name: Comparar con los resultados esperados
         env:
           ESTRICTO: ${{ inputs.estricto || 'false' }}
+          # Además del resumen, deja los números en un JSON para el historial.
+          RESUMEN_JSON: run-summary.json
         run: node scripts/ci-summary.mjs results-ci.json ci/expected-results.json list-ci.json
 
       - name: Subir informe de Playwright (artefacto descargable)
@@ -183,18 +187,20 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
-          # Las trazas guardan el login de los sandboxes de esa ejecución. Son desechables
-          # (caducan en 24 h), pero no hace falta guardarlos más de una semana.
-          retention-days: 7
+          # 30 días: el job "Publicar informe" vuelve a descargar los informes de las
+          # últimas 15 ejecuciones de main para publicarlos en Pages. Las trazas guardan el
+          # login de sandboxes desechables (caducan en 24 h); a los 30 días desaparecen.
+          retention-days: 30
           if-no-files-found: ignore
 
-      - name: Preparar el informe para GitHub Pages
-        # Solo desde main: GitHub Pages publica una única versión del sitio, la última
-        # ejecución de main. Las ejecuciones de pull requests no lo pisan.
-        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
-        uses: actions/upload-pages-artifact@v5
+      - name: Subir los números de esta ejecución
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
         with:
-          path: playwright-report/
+          name: resumen-ci
+          path: run-summary.json
+          retention-days: 1
+          if-no-files-found: ignore
 
       - name: Enlazar el informe en el resumen
         if: ${{ !cancelled() }}
@@ -202,12 +208,14 @@ jobs:
           ARTEFACTO: ${{ steps.informe.outputs.artifact-url }}
           EN_MAIN: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
           PAGES: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+          RUN_ID: ${{ github.run_id }}
         run: |
           {
             echo ""
             echo "### 📊 Informe HTML de Playwright"
             if [ "$EN_MAIN" = "true" ]; then
-              echo "- **Ver en el navegador:** <$PAGES> (se publica en el job \"Publicar informe\", un minuto después)"
+              echo "- **Ver en el navegador:** <${PAGES}informes/${RUN_ID}/> (se publica en el job \"Publicar informe\", un minuto después)"
+              echo "- **Historial de ejecuciones:** <${PAGES}historial/>"
             else
               echo "- En pull requests el informe no se publica en GitHub Pages: se publica al llegar a \`main\`."
             fi
@@ -220,23 +228,95 @@ jobs:
     name: Publicar informe
     needs: resumen
     # También cuando el resumen está en rojo: justo entonces es cuando más interesa
-    # ver el informe. Solo desde main (ver "Preparar el informe para GitHub Pages").
+    # ver el informe. Solo desde main: los pull requests no tocan el historial ni Pages.
     if: ${{ !cancelled() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    # Permisos mínimos para publicar en GitHub Pages, solo en este job.
+    timeout-minutes: 15
+    # Permisos mínimos, solo en este job:
     permissions:
-      pages: write
-      id-token: write
+      contents: write   # escribir en la rama `historial`
+      actions: read     # listar y descargar los informes de ejecuciones anteriores
+      pages: write      # publicar en GitHub Pages
+      id-token: write   # lo exige la publicación en Pages
     environment:
       name: github-pages
       url: ${{ steps.despliegue.outputs.page_url }}
-    # Dos publicaciones a la vez se pisarían: van en fila, sin cancelar ninguna.
+    # Dos publicaciones a la vez se pisarían (en Pages y en la rama historial): van en
+    # fila, sin cancelar ninguna.
     concurrency:
       group: github-pages
       cancel-in-progress: false
 
     steps:
+      - name: Descargar el código
+        uses: actions/checkout@v7
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Descargar el informe de esta ejecución
+        # Si el resumen no llegó a subirlo, se publica igual el historial.
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: playwright-report
+          path: site/informes/${{ github.run_id }}
+
+      - name: Descargar los números de esta ejecución
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: resumen-ci
+          path: resumen
+
+      - name: Abrir la rama historial
+        # La rama vive solo para el historial: si todavía no existe, se crea vacía
+        # (--orphan: sin nada de main). Se abre en la carpeta hist/ como un "worktree".
+        run: |
+          if git ls-remote --exit-code --heads origin historial >/dev/null; then
+            git fetch --depth=1 origin historial
+            git worktree add -B historial hist FETCH_HEAD
+          else
+            git worktree add --orphan -b historial hist
+          fi
+
+      - name: Registrar la ejecución y armar el sitio
+        env:
+          SITE_DIR: site
+          HIST_DIR: hist
+          RESUMEN: resumen/run-summary.json
+          RUN_ID: ${{ github.run_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SHA: ${{ github.sha }}
+          EVENTO: ${{ github.event_name }}
+          SUITE: ${{ inputs.suite || 'todas' }}
+          REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+          PAGES_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+          INFORMES_MAX: 15
+        run: node scripts/publicar-informes.mjs
+
+      - name: Guardar el historial en la rama historial
+        working-directory: hist
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Historial: ejecución ${{ github.run_id }} (${{ github.event_name }})"
+          # Si otra ejecución empujó justo antes, se reintenta sobre lo nuevo.
+          for intento in 1 2 3; do
+            git push -q origin historial && exit 0
+            git fetch -q --depth=1 origin historial && git rebase -q FETCH_HEAD
+          done
+          exit 1
+
+      - name: Preparar el sitio para GitHub Pages
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/
+
       - name: Publicar en GitHub Pages
         id: despliegue
         uses: actions/deploy-pages@v5
@@ -244,4 +324,9 @@ jobs:
       - name: Enlazar el informe publicado
         env:
           URL: ${{ steps.despliegue.outputs.page_url }}
-        run: echo "### 📊 [Informe HTML de esta ejecución]($URL)" >> "$GITHUB_STEP_SUMMARY"
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          {
+            echo "### 📊 [Informe HTML de esta ejecución](${URL}informes/${RUN_ID}/)"
+            echo "### 🗂️ [Historial de ejecuciones](${URL}historial/)"
+          } >> "$GITHUB_STEP_SUMMARY"

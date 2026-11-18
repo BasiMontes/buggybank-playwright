@@ -27,10 +27,19 @@
  * Escribe un resumen en Markdown en $GITHUB_STEP_SUMMARY (se ve en la página de la
  * ejecución en GitHub) y anotaciones ::error / ::notice. Sin dependencias: Node puro.
  */
-import { appendFileSync, existsSync, readFileSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 const [resultsPath = 'results-ci.json', expectedPath = 'ci/expected-results.json', listPath] = process.argv.slice(2);
 const strict = process.env.ESTRICTO === 'true';
+
+/**
+ * Si existe la variable RESUMEN_JSON, deja también los números de esta ejecución en ese
+ * archivo. El job "Publicar informe" lo guarda en la rama `historial` del repo
+ * (scripts/publicar-informes.mjs), así queda la evolución de la suite para siempre.
+ */
+function writeRunSummary(data) {
+  if (process.env.RESUMEN_JSON) writeFileSync(process.env.RESUMEN_JSON, `${JSON.stringify(data, null, 2)}\n`);
+}
 
 /** Escribe en el resumen de GitHub (si existe) y en la consola. */
 function summary(markdown) {
@@ -50,6 +59,7 @@ if (!existsSync(resultsPath)) {
   // creación del sandbox en el globalSetup). Eso siempre es un problema.
   summary('## ❌ No hay resultados de las pruebas');
   summary(`No se encontró \`${resultsPath}\`. Revisa el paso "Ejecutar pruebas": lo más probable es que falte el secreto \`BB_COURSE_CODE\` o que no se haya podido crear el sandbox.`);
+  writeRunSummary({ estado: 'no-ejecutado', ejecutadas: 0, verdes: 0, rojosConocidos: 0, intermitentes: [], nuevos: [], corregidos: [], noEjecutadas: 0, errores: 1 });
   process.exit(1);
 }
 
@@ -205,5 +215,20 @@ if (notRun.length && notRun.length < expected.tests.length) {
 }
 
 summary('El informe completo (capturas, vídeos, trazas y evidencia JSON) está enlazado al final de este resumen.');
+
+writeRunSummary({
+  // sin-cambios = solo los rojos conocidos · cambios = algo nuevo que mirar ·
+  // no-ejecutado = no hubo pruebas (p. ej. no se pudo crear el sandbox) · estricto = modo estricto con rojos
+  estado: results.length === 0 ? 'no-ejecutado' : alarms > 0 ? 'cambios' : pipelineFails ? 'estricto' : 'sin-cambios',
+  ejecutadas: results.length,
+  // Todas las que pasaron: también un bug conocido que ahora pasa y un intermitente en verde.
+  verdes: results.filter((r) => r.status === 'passed').length,
+  rojosConocidos: groups.known.length,
+  intermitentes: groups.flaky.map((r) => ({ titulo: r.title, bug: r.exp.bug, resultado: r.status === 'passed' ? 'verde' : 'rojo' })),
+  nuevos: groups.newFailures.map((r) => r.title),
+  corregidos: groups.fixed.map((r) => ({ titulo: r.title, bug: r.exp.bug })),
+  noEjecutadas: missing.length,
+  errores: errors.length,
+});
 
 process.exit(pipelineFails ? 1 : 0);
