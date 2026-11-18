@@ -87,12 +87,40 @@ Al principio el informe de Playwright solo quedaba como artefacto: un `.zip` al 
 > **<https://basimontes.github.io/buggybank-playwright/>**
 
 - Se abre en el navegador, sin descargar nada, con las capturas, los vídeos y el **visor de trazas** funcionando (se probó sirviendo un informe desde la misma subcarpeta).
-- Muestra siempre **la última ejecución de `main`** (la diaria o la de un push). GitHub Pages guarda una sola versión del sitio, así que cada publicación reemplaza la anterior.
+- La raíz abre **la última ejecución de `main`** (la diaria o la de un push). Las anteriores siguen en el historial (abajo).
 - Se publica **también cuando el pipeline está en rojo**: justamente ahí es cuando más interesa mirarlo.
 - Las ejecuciones de pull requests **no** lo publican, para no pisar el informe de `main`. En ellas sigue el `.zip`.
 - El resumen de cada ejecución termina con los enlaces: el de Pages (en `main`) y el de descarga del `.zip`.
 
 Para activarlo hace falta un paso en la configuración del repo (ver [Configuración](#configuración-una-sola-vez)).
+
+## Problema 5: solo quedaba la última ejecución
+
+GitHub Pages guarda una sola versión del sitio: cada publicación reemplazaba el informe anterior. Si un día aparecía un fallo nuevo, no había con qué compararlo.
+
+¿Por qué no guardar los informes en el repo? Cada uno pesa unos 23 MB por los vídeos y las trazas: serían unos 8 GB al año en el historial de Git, que no olvida nada aunque después se borren. Además, las trazas guardan el login del sandbox, que quedaría ahí para siempre.
+
+**Solución:** separar lo liviano de lo pesado.
+
+| Qué | Dónde | Cuánto dura |
+|---|---|---|
+| **Historial liviano:** un JSON por ejecución (fecha, verdes, rojos conocidos, intermitentes, qué cambió) | Rama [`historial`](https://github.com/BasiMontes/buggybank-playwright/tree/historial) del repo, con un README que muestra la tabla | **Para siempre** |
+| **Informes completos** | Artefacto `playwright-report` de cada ejecución | **30 días** |
+| **Sitio de GitHub Pages** | [`/historial/`](https://basimontes.github.io/buggybank-playwright/historial/): tabla de todas las ejecuciones; `/informes/<ejecución>/`: el informe de cada una | Informes de las **últimas 15** ejecuciones de `main` |
+
+Cómo funciona, en el job **Publicar informe** ([`scripts/publicar-informes.mjs`](../scripts/publicar-informes.mjs)):
+
+1. Añade un JSON con los números de esta ejecución a la rama `historial` y hace commit. Los números los deja `ci-summary.mjs` en `run-summary.json`.
+2. Descarga los informes (artefactos) de las 14 ejecuciones anteriores de `main` que figuran en el historial, más el de esta.
+3. Genera la página del historial, el README de la rama y la raíz, que redirige al último informe.
+4. Publica todo en GitHub Pages.
+
+Decisiones:
+
+- **La rama `historial` no se mergea nunca a `main`** y no tiene nada de su código (se creó vacía, con `--orphan`). Así `main` no recibe un commit automático por día. Un push a esa rama no vuelve a lanzar el workflow, que solo escucha `main`.
+- **Los informes no van a Git:** se reconstruyen en cada publicación a partir de los artefactos. Pasados 30 días el artefacto caduca y el informe desaparece solo. El historial liviano no tiene credenciales.
+- **15 informes** suman unos 350 MB, lejos del límite de 1 GB de un sitio de GitHub Pages. Se cambia con `INFORMES_MAX` en el workflow.
+- Las ejecuciones de pull requests no entran al historial: no son el estado de `main`.
 
 ## Qué hacer cuando el pipeline se pone rojo
 
@@ -125,7 +153,7 @@ Casi siempre es el sandbox: falta el secreto `BB_COURSE_CODE`, el código cambi�
 ## Seguridad: qué queda expuesto y qué no
 
 - **El código del curso** solo vive en el secreto. No aparece en los logs ni en el informe: el sandbox se crea desde Node y no desde el navegador, así que tampoco queda en las trazas.
-- **El email y la contraseña del sandbox de esa ejecución** sí quedan dentro de las trazas del informe (la petición de login). El informe publicado en GitHub Pages lo puede ver cualquiera, sin cuenta, y el `.zip` cualquiera con cuenta de GitHub. Se acepta porque son sandboxes desechables: caducan en 24 horas, solo tienen datos de práctica y cada ejecución crea los suyos. El `.zip` se borra a los 7 días, y el informe de Pages se reemplaza con cada ejecución de `main`.
+- **El email y la contraseña del sandbox de esa ejecución** sí quedan dentro de las trazas del informe (la petición de login). El informe publicado en GitHub Pages lo puede ver cualquiera, sin cuenta, y el `.zip` cualquiera con cuenta de GitHub. Se acepta porque son sandboxes desechables: caducan en 24 horas, solo tienen datos de práctica y cada ejecución crea los suyos. El `.zip` se borra a los 30 días, y cada informe sale de Pages cuando deja de estar entre las 15 últimas ejecuciones. El historial de la rama `historial` solo tiene números y títulos de pruebas, sin credenciales.
 - El workflow tiene permisos de **solo lectura** sobre el repo.
 
 ## Cuánto cuesta
