@@ -61,7 +61,11 @@ permissions:
 # Si subes otro commit al mismo pull request, se cancela la ejecución anterior.
 # En main no se cancela nada: cada ejecución diaria queda completa en el historial.
 concurrency:
-  group: pruebas-${{ github.ref }}
+  # Pull requests: agrupados por su rama (github.head_ref). main: por github.ref.
+  # Así una ejecución de PR nunca comparte grupo con main. Con solo github.ref, un PR
+  # mergeado antes de que arrancara su ejecución usa refs/heads/main y cancelaba la
+  # ejecución en curso de main (pasó el 18/11/2026 con el PR #3).
+  group: pruebas-${{ github.head_ref || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
