@@ -3,7 +3,7 @@
 [![Pruebas BuggyBank](https://github.com/BasiMontes/buggybank-playwright/actions/workflows/pruebas.yml/badge.svg)](https://github.com/BasiMontes/buggybank-playwright/actions/workflows/pruebas.yml)
 <sub>El distintivo indica si hay **cambios** respecto a los bugs conocidos, no que la app no tenga bugs. Ver [Integración continua](#integración-continua-github-actions).</sub>
 
-📊 **[Informe HTML de la última ejecución](https://basimontes.github.io/buggybank-playwright/)**: el informe de Playwright con capturas, vídeos y trazas, en el navegador · 🗂️ **[Historial de ejecuciones](https://basimontes.github.io/buggybank-playwright/historial/)**
+📊 **[Informe HTML de la última ejecución](https://basimontes.github.io/buggybank-playwright/)**: el informe de Playwright con capturas, vídeos y trazas, en el navegador · 🗂️ **Historial de ejecuciones:** [en GitHub](https://github.com/BasiMontes/buggybank-playwright/tree/historial) · [con informes](https://basimontes.github.io/buggybank-playwright/historial/)
 
 Mi entrega del **Desafío BuggyBank** de Free Range Testers: pruebas automatizadas contra [BuggyBank](https://buggybank-seven.vercel.app/login), un banco de práctica con bugs sembrados a propósito.
 
@@ -195,7 +195,7 @@ Tres decisiones (detalle en [`docs/CI.md`](docs/CI.md)):
 
 - **Tres jobs en paralelo, cada uno con su sandbox.** La suite se reparte en tres partes de 23–24 pruebas que corren a la vez; un job final fusiona los resultados. Así la ejecución pasa de unos 16 a unos 8 minutos sin que los saldos se pisen.
 
-Cada ejecución deja un resumen en su página (verdes, rojos conocidos, cambios). El informe HTML de Playwright se publica en **[GitHub Pages](https://basimontes.github.io/buggybank-playwright/)** para verlo directamente en el navegador: la raíz abre el de la última ejecución de `main`, y el **[historial](https://basimontes.github.io/buggybank-playwright/historial/)** lista todas las ejecuciones, con el informe de las últimas 15. El historial liviano (números y cambios de cada ejecución) se guarda para siempre en la rama [`historial`](https://github.com/BasiMontes/buggybank-playwright/tree/historial). Además, cada ejecución, incluidas las de pull requests, deja su informe como `.zip` descargable durante 30 días.
+Cada ejecución deja un resumen en su página (verdes, rojos conocidos, cambios). El informe HTML de Playwright se publica en **[GitHub Pages](https://basimontes.github.io/buggybank-playwright/)** para verlo directamente en el navegador: la raíz abre el de la última ejecución de `main`, y el **[historial](https://basimontes.github.io/buggybank-playwright/historial/)** lista todas las ejecuciones, con el informe de las últimas 15. El historial liviano (números y cambios de cada ejecución) se guarda para siempre en la rama [`historial`](https://github.com/BasiMontes/buggybank-playwright/tree/historial), que GitHub muestra como una tabla con el enlace al informe de cada ejecución. Además, cada ejecución, incluidas las de pull requests, deja su informe como `.zip` descargable durante 30 días.
 
 ## Evidencia
 

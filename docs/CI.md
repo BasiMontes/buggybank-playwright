@@ -104,7 +104,7 @@ GitHub Pages guarda una sola versión del sitio: cada publicación reemplazaba e
 
 | Qué | Dónde | Cuánto dura |
 |---|---|---|
-| **Historial liviano:** un JSON por ejecución (fecha, verdes, rojos conocidos, intermitentes, qué cambió) | Rama [`historial`](https://github.com/BasiMontes/buggybank-playwright/tree/historial) del repo, con un README que muestra la tabla | **Para siempre** |
+| **Historial liviano:** un JSON por ejecución (fecha, verdes, rojos conocidos, intermitentes, qué cambió) | Rama [`historial`](https://github.com/BasiMontes/buggybank-playwright/tree/historial) del repo. Su README muestra la tabla en GitHub, con el enlace al informe de cada ejecución mientras exista | **Para siempre** |
 | **Informes completos** | Artefacto `playwright-report` de cada ejecución | **30 días** |
 | **Sitio de GitHub Pages** | [`/historial/`](https://basimontes.github.io/buggybank-playwright/historial/): tabla de todas las ejecuciones; `/informes/<ejecución>/`: el informe de cada una | Informes de las **últimas 15** ejecuciones de `main` |
 

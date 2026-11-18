@@ -240,7 +240,10 @@ También puedes ver el <a href="historial/">historial de ejecuciones</a>.</p>
     .map((e) => {
       const [icono, estado] = ESTADOS[e.estado] ?? ESTADOS['sin-datos'];
       const lista = cambios(e, false).join('<br>').replace(/\|/g, '\\|') || '—';
-      return `| ${fechaMadrid(e.fecha)} | ${EVENTOS[e.evento] ?? e.evento ?? '—'} | ${icono} ${estado} | ${e.ejecutadas ?? '—'} | ${e.verdes ?? '—'} | ${e.rojosConocidos ?? '—'} | ${lista} | ${e.runUrl ? `[Actions](${e.runUrl})` : '—'} |`;
+      // Enlace al informe en Pages mientras siga entre los últimos MAX; después, "caducado".
+      // Como este README se regenera entero en cada ejecución, nunca queda un enlace roto.
+      const informe = pages && existsSync(join(SITE, 'informes', e.runId)) ? `[Ver informe](${pages}informes/${e.runId}/)` : 'caducado';
+      return `| ${fechaMadrid(e.fecha)} | ${EVENTOS[e.evento] ?? e.evento ?? '—'} | ${icono} ${estado} | ${e.ejecutadas ?? '—'} | ${e.verdes ?? '—'} | ${e.rojosConocidos ?? '—'} | ${lista} | ${informe} | ${e.runUrl ? `[Actions](${e.runUrl})` : '—'} |`;
     })
     .join('\n');
   writeFileSync(
@@ -250,10 +253,10 @@ También puedes ver el <a href="historial/">historial de ejecuciones</a>.</p>
 Esta rama la escribe el workflow **Pruebas BuggyBank** (job "Publicar informe") en cada ejecución de \`main\`. No se mergea a \`main\`: solo guarda el historial.
 
 - Cada ejecución deja un JSON en [\`ejecuciones/\`](ejecuciones/) con sus números y lo que cambió.
-- Los informes completos de las últimas ${MAX} ejecuciones están en ${pages ? `[GitHub Pages](${pages}historial/)` : 'GitHub Pages'}.
+- Cada fila enlaza a su informe HTML completo (capturas, vídeos, trazas) mientras esté entre las últimas ${MAX} ejecuciones. ${pages ? `[Último informe](${pages}) · [Historial en GitHub Pages](${pages}historial/)` : ''}
 
-| Fecha (Madrid) | Origen | Resultado | Ejecutadas | Verdes | Rojos conocidos | Cambios | Ejecución |
-|---|---|---|---|---|---|---|---|
+| Fecha (Madrid) | Origen | Resultado | Ejecutadas | Verdes | Rojos conocidos | Cambios | Informe | Ejecución |
+|---|---|---|---|---|---|---|---|---|
 ${md}
 `,
   );
