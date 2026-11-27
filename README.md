@@ -7,6 +7,7 @@ Esta rama la escribe el workflow **Pruebas BuggyBank** (job "Publicar informe") 
 
 | Fecha (Madrid) | Origen | Resultado | Ejecutadas | Verdes | Rojos conocidos | Cambios | Informe | Ejecución |
 |---|---|---|---|---|---|---|---|---|
+| 27 nov 2026, 17:49 | Diaria | ⚠️ Cambios | 46 | 30 | 15 | ❓ 24 sin ejecutar | [Ver informe](https://BasiMontes.github.io/buggybank-playwright/informes/46035881084/) | [Actions](https://github.com/BasiMontes/buggybank-playwright/actions/runs/46035881084) |
 | 26 nov 2026, 18:03 | Diaria | ✅ Sin cambios | 70 | 44 | 26 | — | [Ver informe](https://BasiMontes.github.io/buggybank-playwright/informes/45863416241/) | [Actions](https://github.com/BasiMontes/buggybank-playwright/actions/runs/45863416241) |
 | 25 nov 2026, 18:26 | Diaria | ✅ Sin cambios | 70 | 44 | 26 | — | [Ver informe](https://BasiMontes.github.io/buggybank-playwright/informes/45663066371/) | [Actions](https://github.com/BasiMontes/buggybank-playwright/actions/runs/45663066371) |
 | 24 nov 2026, 18:56 | Diaria | ✅ Sin cambios | 70 | 43 | 26 | — | [Ver informe](https://BasiMontes.github.io/buggybank-playwright/informes/45452873378/) | [Actions](https://github.com/BasiMontes/buggybank-playwright/actions/runs/45452873378) |

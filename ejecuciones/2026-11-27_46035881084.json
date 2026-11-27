@@ -1,0 +1,23 @@
+{
+  "fecha": "2026-11-27T16:49:09.651Z",
+  "runId": "46035881084",
+  "runUrl": "https://github.com/BasiMontes/buggybank-playwright/actions/runs/46035881084",
+  "sha": "07c06ec",
+  "evento": "schedule",
+  "suite": "todas",
+  "estado": "cambios",
+  "ejecutadas": 46,
+  "verdes": 30,
+  "rojosConocidos": 15,
+  "intermitentes": [
+    {
+      "titulo": "PG-06 · dos clics simultáneos en \"Procesar\" avanzan un solo estado",
+      "bug": "BUG-16",
+      "resultado": "rojo"
+    }
+  ],
+  "nuevos": [],
+  "corregidos": [],
+  "noEjecutadas": 24,
+  "errores": 0
+}
